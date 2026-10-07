@@ -1,2 +1,3 @@
-# karni-sena-varanasi
-Official website for Karni Sena Varanasi
+# Karni Sena Varanasi
+
+Official website for Karni Sena Varanasi.
