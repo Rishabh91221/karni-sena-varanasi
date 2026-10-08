@@ -1,5 +1,7 @@
 User-agent: *
 Allow: /
 Disallow: /admin.html
+Disallow: /thank-you.html
+Disallow: /google613aea052db60bef.html
 
 Sitemap: https://karni-sena-varanasi.pages.dev/sitemap.xml
