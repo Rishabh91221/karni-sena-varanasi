@@ -1,210 +1,348 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="hi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="क्षत्रिय करणी सेना वाराणसी — जिला टीम से जुड़ें">
+    <meta name="description" content="क्षत्रिय करणी सेना वाराणसी — एकजुट क्षत्रिय परिवार भारतवर्ष">
     <meta name="theme-color" content="#E87A1E">
     <title>क्षत्रिय करणी सेना — वाराणसी</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi:ital@0;1&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="/css/style.css">
     <link rel="icon" type="image/png" href="/assets/logo.png">
 </head>
 <body>
 
-    <!-- ============ HEADER ============ -->
-    <header class="site-header" id="site-header">
-        <div class="topbar">
-            <span id="topbar-text">॥ जय माँ करणी ॥</span>
+<!-- ============ TOP STRIP ============ -->
+<div class="top-strip">
+    <span id="topbar-text">॥ जय माँ करणी ॥</span>
+</div>
+
+<!-- ============ HEADER ============ -->
+<header class="site-header" id="site-header">
+    <div class="header-inner">
+        
+        <!-- Logo + org name -->
+        <a href="#home" class="brand" id="brand">
+            <img id="brand-logo" src="/assets/logo.png" alt="लोगो" class="brand-logo">
+            <div class="brand-text">
+                <strong id="brand-name">क्षत्रिय करणी सेना</strong>
+                <small id="brand-subtitle">एकजुट क्षत्रिय परिवार भारतवर्ष</small>
+            </div>
+        </a>
+
+        <!-- Desktop nav -->
+        <nav class="main-nav" id="main-nav">
+            <ul id="nav-list"></ul>
+        </nav>
+
+        <!-- CTA button -->
+        <a href="#join" class="btn-join" id="header-cta">JOIN KARNI SENA</a>
+
+        <!-- Mobile hamburger -->
+        <button class="hamburger" id="hamburger" aria-label="Menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+    </div>
+</header>
+
+<!-- ============ MOBILE DRAWER ============ -->
+<aside class="mobile-drawer" id="mobile-drawer">
+    <div class="drawer-header">
+        <img src="/assets/logo.png" alt="लोगो" class="drawer-logo">
+        <strong id="drawer-org-name">क्षत्रिय करणी सेना</strong>
+        <button class="drawer-close" id="drawer-close" aria-label="Close">✕</button>
+    </div>
+    <nav class="drawer-nav">
+        <ul id="drawer-list"></ul>
+    </nav>
+    <a href="#join" class="btn-join drawer-cta" id="drawer-cta">JOIN KARNI SENA</a>
+</aside>
+<div class="drawer-overlay" id="drawer-overlay"></div>
+
+<!-- ============ MAIN CONTENT ============ -->
+<main id="main">
+
+    <!-- HERO -->
+    <section class="hero" id="home">
+        <div class="hero-slider" id="hero-slider"></div>
+        <div class="hero-dots" id="hero-dots"></div>
+        <div class="hero-content">
+            <h1 class="hero-title" id="hero-title">क्षत्रिय करणी सेना — वाराणसी</h1>
+            <p class="hero-subtitle" id="hero-subtitle">॥ जय माँ करणी ॥</p>
+            <p class="hero-desc" id="hero-desc"></p>
+            <div class="hero-actions">
+                <a href="#join" class="btn btn-primary" id="hero-primary">आवेदन भरें →</a>
+                <a href="#about" class="btn btn-outline-light" id="hero-secondary">और जानें</a>
+            </div>
         </div>
-        <div class="header-main">
-            <a href="#top" class="brand">
-                <img id="brand-logo" src="/assets/logo.png" alt="लोगो" class="brand-logo">
-                <div class="brand-text">
-                    <strong id="brand-name">क्षत्रिय करणी सेना</strong>
-                    <small id="brand-subtitle">वाराणसी</small>
+    </section>
+
+    <!-- ABOUT -->
+    <section class="section section-cream" id="about">
+        <div class="section-inner">
+            <div class="section-head">
+                <span class="section-kicker" id="about-subtitle">About Us</span>
+                <h2 class="section-title" id="about-title">हमारे बारे में</h2>
+                <div class="section-divider"></div>
+            </div>
+            <div class="about-grid">
+                <div class="about-text">
+                    <p class="about-lead" id="about-desc"></p>
+                    <div id="about-paragraphs"></div>
+                    <div class="about-stats" id="about-stats"></div>
                 </div>
-            </a>
-            <a href="#join" class="btn btn-primary btn-join-header" id="header-cta">JOIN KARNA</a>
-        </div>
-    </header>
-
-    <!-- ============ HERO ============ -->
-    <section class="hero" id="top">
-        <div class="hero-badge" id="hero-badge">● सदस्यता / Joining Application</div>
-        <h1 class="hero-title" id="hero-title">वाराणसी जिला टीम से जुड़ें</h1>
-        <p class="hero-desc" id="hero-desc">
-            संगठन के साथ जुड़ने के इच्छुक साथियों के लिए सरल ऑनलाइन आवेदन।
-            अपनी मूल जानकारी भरें और आवश्यक दस्तावेज़ अपलोड करें।
-        </p>
-        <div class="hero-actions">
-            <a href="#join" class="btn btn-primary" id="hero-primary">आवेदन भरें →</a>
-            <a href="#team" class="btn btn-outline" id="hero-secondary">जिला टीम देखें</a>
-        </div>
-    </section>
-
-    <!-- ============ ABOUT ============ -->
-    <section class="section about" id="about">
-        <h2 class="section-title" id="about-title">संगठन के बारे में</h2>
-        <p class="section-desc" id="about-desc"></p>
-        <div class="about-values" id="about-values"></div>
-    </section>
-
-    <!-- ============ TEAM ============ -->
-    <section class="section team" id="team">
-        <h2 class="section-title" id="team-title">जिला टीम</h2>
-        <div class="team-grid" id="team-grid"></div>
-    </section>
-
-    <!-- ============ GALLERY ============ -->
-    <section class="section gallery" id="gallery">
-        <h2 class="section-title" id="gallery-title">गतिविधियाँ</h2>
-        <p class="section-desc" id="gallery-desc">संगठन की विभिन्न गतिविधियों की झलकियाँ।</p>
-        <div class="gallery-grid" id="gallery-grid"></div>
-    </section>
-
-    <!-- ============ JOIN FORM ============ -->
-    <section class="section join" id="join">
-        <h2 class="section-title" id="join-title">Joining Form</h2>
-        <p class="section-desc" id="join-desc">
-            नीचे दी गई जानकारी सही-सही भरें। * वाले सभी फ़ील्ड आवश्यक हैं।
-        </p>
-
-        <div class="form-card">
-            <div class="form-card-header">
-                <img src="/assets/logo.png" alt="लोगो" class="form-logo">
-                <h3 id="form-card-title">क्षत्रिय करणी सेना</h3>
-                <p id="form-card-subtitle">वाराणसी जिला टीम</p>
-                <p class="form-card-sub" id="form-card-desc"></p>
-                <ul class="form-card-list" id="form-card-list"></ul>
-                <div class="form-help">
-                    <strong id="form-help-title">सहायता:</strong>
-                    <div id="form-help-phones"></div>
+                <div class="about-visual">
+                    <img src="/assets/logo.png" alt="क्षत्रिय करणी सेना" class="about-logo-big">
+                    <div class="about-badge">॥ जय माँ करणी ॥</div>
                 </div>
             </div>
+        </div>
+    </section>
 
-            <form id="joining-form" class="joining-form" novalidate>
+    <!-- AGENDA -->
+    <section class="section section-white" id="agenda">
+        <div class="section-inner">
+            <div class="section-head">
+                <span class="section-kicker" id="agenda-subtitle">Agenda</span>
+                <h2 class="section-title" id="agenda-title">एजेंडा</h2>
+                <p class="section-desc" id="agenda-desc"></p>
+                <div class="section-divider"></div>
+            </div>
+            <div class="agenda-grid" id="agenda-grid"></div>
+        </div>
+    </section>
 
-                <div class="field">
-                    <label for="candidate_name">Candidate Name <span class="req">*</span></label>
-                    <input type="text" id="candidate_name" name="candidate_name"
-                           placeholder="उम्मीदवार का नाम" required>
-                    <small class="error" data-for="candidate_name"></small>
+    <!-- HEAD OF REGION -->
+    <section class="section section-maroon" id="head-of-region">
+        <div class="section-inner">
+            <div class="section-head">
+                <span class="section-kicker section-kicker-light" id="head-subtitle">Head of Region</span>
+                <h2 class="section-title section-title-light" id="head-title">क्षेत्र प्रमुख</h2>
+                <div class="section-divider section-divider-light"></div>
+            </div>
+            <div class="head-card" id="head-card"></div>
+        </div>
+    </section>
+
+    <!-- LEADERS / TEAM -->
+    <section class="section section-cream" id="leaders">
+        <div class="section-inner">
+            <div class="section-head">
+                <span class="section-kicker" id="team-subtitle">Leaders</span>
+                <h2 class="section-title" id="team-title">नेतृत्व</h2>
+                <p class="section-desc" id="team-desc"></p>
+                <div class="section-divider"></div>
+            </div>
+            <div class="team-grid" id="team-grid"></div>
+        </div>
+    </section>
+
+    <!-- ACTIVITY -->
+    <section class="section section-white" id="activity">
+        <div class="section-inner">
+            <div class="section-head">
+                <span class="section-kicker" id="activity-subtitle">Activity</span>
+                <h2 class="section-title" id="activity-title">गतिविधियाँ</h2>
+                <p class="section-desc" id="activity-desc"></p>
+                <div class="section-divider"></div>
+            </div>
+            <div class="timeline" id="activity-list"></div>
+        </div>
+    </section>
+
+    <!-- NEWS -->
+    <section class="section section-cream" id="news">
+        <div class="section-inner">
+            <div class="section-head">
+                <span class="section-kicker" id="news-subtitle">News</span>
+                <h2 class="section-title" id="news-title">समाचार</h2>
+                <p class="section-desc" id="news-desc"></p>
+                <div class="section-divider"></div>
+            </div>
+            <div class="news-grid" id="news-list"></div>
+        </div>
+    </section>
+
+    <!-- GALLERY -->
+    <section class="section section-white" id="gallery">
+        <div class="section-inner">
+            <div class="section-head">
+                <span class="section-kicker" id="gallery-subtitle">Gallery</span>
+                <h2 class="section-title" id="gallery-title">फ़ोटो गैलरी</h2>
+                <p class="section-desc" id="gallery-desc"></p>
+                <div class="section-divider"></div>
+            </div>
+            <div class="gallery-grid" id="gallery-grid"></div>
+        </div>
+    </section>
+
+    <!-- OFFICE -->
+    <section class="section section-cream" id="office">
+        <div class="section-inner">
+            <div class="section-head">
+                <span class="section-kicker" id="office-subtitle">Office</span>
+                <h2 class="section-title" id="office-title">कार्यालय</h2>
+                <div class="section-divider"></div>
+            </div>
+            <div class="office-card" id="office-card"></div>
+        </div>
+    </section>
+
+    <!-- JOIN FORM -->
+    <section class="section section-orange" id="join">
+        <div class="section-inner section-inner-narrow">
+            <div class="section-head">
+                <span class="section-kicker section-kicker-light" id="join-subtitle">Joining Form</span>
+                <h2 class="section-title section-title-light" id="join-title">सदस्यता फॉर्म</h2>
+                <p class="section-desc section-desc-light" id="join-desc"></p>
+            </div>
+
+            <div class="form-card">
+                <div class="form-card-header">
+                    <img src="/assets/logo.png" alt="लोगो" class="form-logo">
+                    <h3 id="form-card-title">क्षत्रिय करणी सेना</h3>
+                    <p id="form-card-subtitle">वाराणसी जिला टीम</p>
+                    <p class="form-card-sub" id="form-card-desc"></p>
+                    <ul class="form-card-list" id="form-card-list"></ul>
+                    <div class="form-help">
+                        <strong id="form-help-title">सहायता:</strong>
+                        <div id="form-help-phones"></div>
+                    </div>
                 </div>
 
-                <div class="field">
-                    <label for="father_name">Father's Name <span class="req">*</span></label>
-                    <input type="text" id="father_name" name="father_name"
-                           placeholder="पिता का नाम" required>
-                    <small class="error" data-for="father_name"></small>
-                </div>
+                <form id="joining-form" class="joining-form" novalidate>
 
-                <div class="field">
-                    <label for="address">Address <span class="req">*</span></label>
-                    <textarea id="address" name="address" rows="3"
-                              placeholder="ग्राम/मोहल्ला, थाना, पोस्ट आदि" required></textarea>
-                    <small class="error" data-for="address"></small>
-                </div>
+                    <div class="field">
+                        <label for="candidate_name">Candidate Name <span class="req">*</span></label>
+                        <input type="text" id="candidate_name" name="candidate_name" placeholder="उम्मीदवार का नाम" required>
+                        <small class="error" data-for="candidate_name"></small>
+                    </div>
 
-                <div class="field">
-                    <label for="district">District <span class="req">*</span></label>
-                    <input type="text" id="district" name="district" value="वाराणसी" required>
-                    <small class="error" data-for="district"></small>
-                </div>
+                    <div class="field">
+                        <label for="father_name">Father's Name <span class="req">*</span></label>
+                        <input type="text" id="father_name" name="father_name" placeholder="पिता का नाम" required>
+                        <small class="error" data-for="father_name"></small>
+                    </div>
 
-                <div class="field">
-                    <label for="state">State <span class="req">*</span></label>
-                    <input type="text" id="state" name="state" value="उत्तर प्रदेश" required>
-                    <small class="error" data-for="state"></small>
-                </div>
+                    <div class="field">
+                        <label for="address">Address <span class="req">*</span></label>
+                        <textarea id="address" name="address" rows="3" placeholder="ग्राम/मोहल्ला, थाना, पोस्ट आदि" required></textarea>
+                        <small class="error" data-for="address"></small>
+                    </div>
 
-                <div class="field">
-                    <label for="mobile">Mobile Number <span class="req">*</span></label>
-                    <input type="tel" id="mobile" name="mobile"
-                           placeholder="10 अंकों का मोबाइल नंबर"
-                           pattern="[6-9][0-9]{9}" maxlength="10" required>
-                    <small class="error" data-for="mobile"></small>
-                </div>
-
-                <div class="field">
-                    <label for="aadhaar">Aadhaar Number <span class="req">*</span></label>
-                    <input type="text" id="aadhaar" name="aadhaar"
-                           placeholder="12 अंकों का आधार नंबर"
-                           pattern="[0-9]{12}" maxlength="12" required>
-                    <small class="error" data-for="aadhaar"></small>
-                </div>
-
-                <div class="field field-photo">
-                    <label for="photo">उम्मीदवार की फोटो <span class="req">*</span></label>
-                    <div class="file-drop" id="photo-drop">
-                        <input type="file" id="photo" name="photo"
-                               accept="image/jpeg,image/png,image/webp" required>
-                        <div class="file-drop-inner">
-                            <div class="file-icon">📷</div>
-                            <div class="file-text">
-                                <strong>फोटो चुनें</strong>
-                                <span>या यहाँ खींच कर छोड़ें</span>
-                            </div>
-                            <div class="file-preview" id="photo-preview"></div>
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="district">District <span class="req">*</span></label>
+                            <input type="text" id="district" name="district" value="वाराणसी" required>
+                            <small class="error" data-for="district"></small>
+                        </div>
+                        <div class="field">
+                            <label for="state">State <span class="req">*</span></label>
+                            <input type="text" id="state" name="state" value="उत्तर प्रदेश" required>
+                            <small class="error" data-for="state"></small>
                         </div>
                     </div>
-                    <small class="hint">JPG/PNG/WebP — अधिकतम 5MB, स्पष्ट फोटो अपलोड करें।</small>
-                    <small class="error" data-for="photo"></small>
-                </div>
 
-                <div class="field">
-                    <label for="additional">अतिरिक्त जानकारी (वैकल्पिक)</label>
-                    <textarea id="additional" name="additional" rows="3"
-                              placeholder="यदि कोई विशेष जानकारी साझा करनी हो..."></textarea>
-                </div>
+                    <div class="field">
+                        <label for="mobile">Mobile Number <span class="req">*</span></label>
+                        <input type="tel" id="mobile" name="mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[6-9][0-9]{9}" maxlength="10" required>
+                        <small class="error" data-for="mobile"></small>
+                    </div>
 
-                <div class="field field-consent">
-                    <label class="consent-label">
-                        <input type="checkbox" id="consent" name="consent" required>
-                        <span id="consent-text"></span>
-                    </label>
-                    <small class="error" data-for="consent"></small>
-                </div>
+                    <div class="field">
+                        <label for="aadhaar">Aadhaar Number <span class="req">*</span></label>
+                        <input type="text" id="aadhaar" name="aadhaar" placeholder="12 अंकों का आधार नंबर" pattern="[0-9]{12}" maxlength="12" required>
+                        <small class="error" data-for="aadhaar"></small>
+                    </div>
 
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary btn-submit" id="submit-btn">
-                        आवेदन जमा करें
-                    </button>
-                    <button type="reset" class="btn btn-outline" id="reset-btn">
-                        फ़ॉर्म साफ़ करें
-                    </button>
-                </div>
+                    <div class="field field-photo">
+                        <label for="photo">उम्मीदवार की फोटो <span class="req">*</span></label>
+                        <div class="file-drop" id="photo-drop">
+                            <input type="file" id="photo" name="photo" accept="image/jpeg,image/png,image/webp" required>
+                            <div class="file-drop-inner">
+                                <div class="file-icon">📷</div>
+                                <div class="file-text">
+                                    <strong>फोटो चुनें</strong>
+                                    <span>या यहाँ खींच कर छोड़ें</span>
+                                </div>
+                                <div class="file-preview" id="photo-preview"></div>
+                            </div>
+                        </div>
+                        <small class="hint">JPG/PNG/WebP — अधिकतम 5MB, स्पष्ट फोटो अपलोड करें।</small>
+                        <small class="error" data-for="photo"></small>
+                    </div>
 
-                <div class="form-status" id="form-status"></div>
-            </form>
+                    <div class="field">
+                        <label for="additional">अतिरिक्त जानकारी (वैकल्पिक)</label>
+                        <textarea id="additional" name="additional" rows="3" placeholder="यदि कोई विशेष जानकारी साझा करनी हो..."></textarea>
+                    </div>
+
+                    <div class="field field-consent">
+                        <label class="consent-label">
+                            <input type="checkbox" id="consent" name="consent" required>
+                            <span id="consent-text"></span>
+                        </label>
+                        <small class="error" data-for="consent"></small>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary btn-submit" id="submit-btn">आवेदन जमा करें</button>
+                        <button type="reset" class="btn btn-outline" id="reset-btn">फ़ॉर्म साफ़ करें</button>
+                    </div>
+
+                    <div class="form-status" id="form-status"></div>
+                </form>
+            </div>
         </div>
     </section>
 
-    <!-- ============ CONTACT ============ -->
-    <section class="section contact" id="contact">
-        <h2 class="section-title" id="contact-title">Contact Us</h2>
-        <div class="contact-grid" id="contact-grid"></div>
+    <!-- CONTACT -->
+    <section class="section section-white" id="contact">
+        <div class="section-inner">
+            <div class="section-head">
+                <span class="section-kicker" id="contact-subtitle">Contact Us</span>
+                <h2 class="section-title" id="contact-title">संपर्क करें</h2>
+                <p class="section-desc" id="contact-desc"></p>
+                <div class="section-divider"></div>
+            </div>
+            <div class="contact-grid" id="contact-grid"></div>
+        </div>
     </section>
 
-    <!-- ============ FOOTER ============ -->
-    <footer class="site-footer">
-        <img src="/assets/logo.png" alt="लोगो" class="footer-logo">
-        <h3 id="footer-name">क्षत्रिय करणी सेना — वाराणसी</h3>
-        <p id="footer-tagline"></p>
-        <div class="footer-links">
-            <a href="#join" class="btn btn-outline btn-small">Joining Form</a>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="site-footer">
+    <div class="footer-inner">
+        <div class="footer-col">
+            <img src="/assets/logo.png" alt="लोगो" class="footer-logo">
+            <h3 id="footer-name">क्षत्रिय करणी सेना — वाराणसी</h3>
+            <p id="footer-tagline"></p>
         </div>
-        <p class="footer-copy" id="footer-copy"></p>
-    </footer>
+        <div class="footer-col">
+            <h4>Quick Links</h4>
+            <ul id="footer-quick-links"></ul>
+        </div>
+        <div class="footer-col">
+            <h4>संपर्क</h4>
+            <div id="footer-contact"></div>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p id="footer-copy"></p>
+    </div>
+</footer>
 
-    <!-- Floating CTA -->
-    <a href="#join" class="floating-cta" id="floating-cta">Join Now</a>
+<!-- Floating Join CTA -->
+<a href="#join" class="floating-cta" id="floating-cta">Join Now</a>
 
-    <script src="/js/compress.js"></script>
-    <script src="/js/main.js"></script>
+<script src="/js/compress.js"></script>
+<script src="/js/main.js"></script>
 </body>
 </html>
