@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Admin — क्षत्रिय करणी सेना वाराणसी</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="icon" type="image/png" href="/assets/logo.png">
+</head>
+<body>
+
+<!-- ============ LOGIN SCREEN ============ -->
+<div id="login-screen" class="login-screen">
+    <div class="login-card">
+        <img src="/assets/logo.png" alt="लोगो" class="login-logo">
+        <h1>Admin Panel</h1>
+        <p class="login-sub">क्षत्रिय करणी सेना — वाराणसी</p>
+
+        <form id="login-form" autocomplete="off">
+            <div class="field">
+                <label for="username">Username</label>
+                <input type="text" id="username" placeholder="Enter username" required autocomplete="username">
+            </div>
+            <div class="field">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter password" required autocomplete="current-password">
+            </div>
+            <button type="submit" class="btn btn-primary btn-full" id="login-btn">Log In</button>
+            <div class="login-error" id="login-error"></div>
+        </form>
+
+        <a href="/" class="back-home">← मुख्य पृष्ठ पर वापस जाएँ</a>
+    </div>
+</div>
+
+<!-- ============ DASHBOARD ============ -->
+<div id="dashboard" class="dashboard" style="display:none;">
+
+    <!-- Top bar -->
+    <header class="admin-header">
+        <div class="admin-header-left">
+            <img src="/assets/logo.png" alt="लोगो" class="admin-logo">
+            <div>
+                <strong>Admin Dashboard</strong>
+                <small>क्षत्रिय करणी सेना — वाराणसी</small>
+            </div>
+        </div>
+        <div class="admin-header-right">
+            <a href="/" class="btn-text">← Site</a>
+            <button id="logout-btn" class="btn-text">Log Out</button>
+        </div>
+    </header>
+
+    <main class="admin-main">
+
+        <!-- Stats Cards -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-value" id="stat-total">—</div>
+                <div class="stat-label">कुल आवेदन</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📅</div>
+                <div class="stat-value" id="stat-today">—</div>
+                <div class="stat-label">आज</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📈</div>
+                <div class="stat-value" id="stat-week">—</div>
+                <div class="stat-label">इस हफ़्ते</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🗓️</div>
+                <div class="stat-value" id="stat-month">—</div>
+                <div class="stat-label">इस महीने</div>
+            </div>
+        </section>
+
+        <!-- Toolbar -->
+        <section class="toolbar">
+            <div class="toolbar-left">
+                <input type="search" id="search-input" placeholder="🔍 नाम, मोबाइल, आधार से खोजें..." />
+                <input type="date" id="date-from" title="From date" />
+                <input type="date" id="date-to" title="To date" />
+                <button id="clear-filters" class="btn-text">Clear</button>
+            </div>
+            <div class="toolbar-right">
+                <button id="refresh-btn" class="btn btn-outline btn-small">🔄 Refresh</button>
+                <button id="export-btn" class="btn btn-primary btn-small">📥 Export CSV</button>
+            </div>
+        </section>
+
+        <!-- Table -->
+        <section class="table-wrap">
+            <div class="table-status" id="table-status">लोड हो रहा है...</div>
+            <table class="submissions-table" id="submissions-table" style="display:none;">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>नाम</th>
+                        <th>पिता का नाम</th>
+                        <th>मोबाइल</th>
+                        <th>आधार</th>
+                        <th>जिला</th>
+                        <th>फोटो</th>
+                        <th>दिनांक</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body"></tbody>
+            </table>
+        </section>
+
+    </main>
+</div>
+
+<!-- ============ DETAIL MODAL ============ -->
+<div class="modal-backdrop" id="modal-backdrop" style="display:none;">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>आवेदन विवरण</h2>
+            <button id="modal-close" class="modal-close">✕</button>
+        </div>
+        <div class="modal-body" id="modal-body"></div>
+    </div>
+</div>
+
+<script src="/js/admin.js"></script>
+</body>
+</html>
