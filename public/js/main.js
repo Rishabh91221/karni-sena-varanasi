@@ -1,7 +1,8 @@
 /* ============================================================
    KARNI SENA VARANASI — Main Script
    Loads content.json and renders the page dynamically.
-   Handles form validation, photo preview, and submission.
+   Handles form validation, photo preview, and submission
+   to the Cloudflare Worker backend.
    ============================================================ */
 
 (function () {
@@ -86,7 +87,7 @@
       const card = document.createElement('div');
       card.className = 'team-card';
       card.innerHTML = `
-        <img class="team-photo" src="${m.photo}" alt="${m.name}" 
+        <img class="team-photo" src="${m.photo}" alt="${m.name}"
              onerror="this.style.background='#F5E9D0'; this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text x=%2250%22 y=%2255%22 font-size=%2240%22 text-anchor=%22middle%22 fill=%22%23C6600F%22>👤</text></svg>'">
         <div class="team-info">
           <h3>${m.name}</h3>
@@ -353,9 +354,12 @@
   function setupFormSubmit(content) {
     if (!form) return;
 
+    const endpoint = (content && content.formEndpoint) ? content.formEndpoint : '';
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
+      // Validate
       if (!validateForm()) {
         showStatus('कृपया सभी आवश्यक फ़ील्ड सही-सही भरें।', 'error-msg');
         const firstErr = document.querySelector('.field.has-error');
@@ -363,33 +367,77 @@
         return;
       }
 
+      if (!endpoint || endpoint.indexOf('REPLACE_WITH') === 0) {
+        showStatus('बैकएंड कॉन्फ़िगर नहीं है। कृपया व्यवस्थापक से संपर्क करें।', 'error-msg');
+        return;
+      }
+
       const submitBtn = document.getElementById('submit-btn');
       const originalText = submitBtn.textContent;
       submitBtn.disabled = true;
       submitBtn.textContent = 'भेजा जा रहा है...';
+      showStatus('आपका आवेदन भेजा जा रहा है...', '');
 
       try {
-        // Build FormData for future backend
-        const formData = new FormData(form);
+        // Compress photo before upload (if available)
+        const photoInput = document.getElementById('photo');
+        let photoFile = photoInput && photoInput.files ? photoInput.files[0] : null;
 
-        // NOTE: This is where Phase 2 (FormZero + R2) will plug in.
-        // For now, we log and show a success message so you can test the flow.
-        console.log('[FormData]', Object.fromEntries(formData.entries()));
+        if (photoFile && window.KSImageCompressor) {
+          try {
+            photoFile = await window.KSImageCompressor.compressImage(photoFile, {
+              maxWidth: 1600,
+              maxHeight: 1600,
+              quality: 0.82,
+            });
+          } catch (compErr) {
+            console.warn('Compression failed, using original:', compErr);
+          }
+        }
 
-        // Simulate a short delay (remove when backend is wired)
-        await new Promise(r => setTimeout(r, 800));
+        // Build FormData
+        const fd = new FormData();
+        fd.append('candidate_name', document.getElementById('candidate_name').value.trim());
+        fd.append('father_name',    document.getElementById('father_name').value.trim());
+        fd.append('address',        document.getElementById('address').value.trim());
+        fd.append('district',       document.getElementById('district').value.trim());
+        fd.append('state',          document.getElementById('state').value.trim());
+        fd.append('mobile',         document.getElementById('mobile').value.trim());
+        fd.append('aadhaar',        document.getElementById('aadhaar').value.trim());
+        fd.append('additional',     (document.getElementById('additional').value || '').trim());
+        if (photoFile) {
+          fd.append('photo', photoFile, photoFile.name || 'photo.jpg');
+        }
+
+        // Send to backend
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          body: fd,
+        });
+
+        const result = await response.json().catch(() => ({}));
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Server error');
+        }
 
         // Success
         showStatus('आपका आवेदन सफलतापूर्वक जमा हो गया है।', 'success');
         form.reset();
-        document.getElementById('photo-preview').innerHTML = '';
+        const preview = document.getElementById('photo-preview');
+        if (preview) preview.innerHTML = '';
 
-        // Redirect to thank-you page after a short moment
-        setTimeout(() => { window.location.href = '/thank-you.html'; }, 1200);
+        // Redirect to thank-you page
+        setTimeout(() => {
+          window.location.href = '/thank-you.html?id=' + (result.submissionId || '');
+        }, 1200);
 
       } catch (err) {
         console.error('[submit]', err);
-        showStatus('क्षमा करें, कुछ गड़बड़ हुई। कृपया दोबारा प्रयास करें।', 'error-msg');
+        showStatus(
+          'क्षमा करें, आवेदन जमा नहीं हो सका। कृपया दोबारा प्रयास करें। (' + (err.message || 'error') + ')',
+          'error-msg'
+        );
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = originalText;
