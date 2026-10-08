@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#7B1E1E">
+    <title>आवेदन सफल — क्षत्रिय करणी सेना वाराणसी</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="/css/thank-you.css">
+    <link rel="icon" type="image/png" href="/assets/logo.png">
+</head>
+<body>
+
+    <div class="thankyou-page">
+        <!-- Animated ॐ watermark layer -->
+        <div class="om-bg" aria-hidden="true">ॐ</div>
+        <div class="om-bg om-bg-2" aria-hidden="true">ॐ</div>
+        <div class="om-bg om-bg-3" aria-hidden="true">ॐ</div>
+
+        <!-- Floating particles -->
+        <div class="particles" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span><span></span>
+        </div>
+
+        <div class="thankyou-content">
+
+            <!-- Success checkmark -->
+            <div class="thankyou-check">
+                <svg viewBox="0 0 52 52" class="check-svg">
+                    <circle class="check-circle" cx="26" cy="26" r="24" fill="none"/>
+                    <path class="check-mark" fill="none" d="M14 27l8 8 16-16"/>
+                </svg>
+            </div>
+
+            <!-- Header -->
+            <div class="org-header">
+                <img src="/assets/logo.png" alt="लोगो" class="org-logo">
+                <div class="org-name">क्षत्रिय करणी सेना — वाराणसी</div>
+            </div>
+
+            <!-- Main message -->
+            <h1 class="thankyou-message" id="thankyou-message">
+                आपका आवेदन सफलतापूर्वक जमा हो गया है
+            </h1>
+
+            <p class="thankyou-sub" id="thankyou-sub">
+                हमारी टीम शीघ्र ही आपसे संपर्क करेगी।
+            </p>
+
+            <!-- Reference ID box (shown if ?id=N passed) -->
+            <div class="ref-box" id="ref-box" style="display:none;">
+                <span class="ref-label">आपका आवेदन संदर्भ</span>
+                <span class="ref-id" id="ref-id">—</span>
+            </div>
+
+            <!-- Shloka divider -->
+            <div class="shloka-divider">
+                <span class="divider-line"></span>
+                <span class="divider-om">ॐ</span>
+                <span class="divider-line"></span>
+            </div>
+
+            <!-- The shloka -->
+            <div class="shloka-box">
+                <div class="shloka-text">
+                    अहिंसा परमो धर्मः धर्म हिंसा तथैव च
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="thankyou-actions">
+                <a href="/" class="btn btn-primary">मुख्य पृष्ठ पर वापस जाएँ</a>
+            </div>
+
+            <!-- Contact reminder -->
+            <p class="contact-reminder">
+                किसी भी सहायता के लिए संपर्क करें:
+                <br>
+                <a href="tel:9140915534">📞 9140915534</a>
+                &nbsp;·&nbsp;
+                <a href="tel:8756799602">📞 8756799602</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Show reference ID if present in URL
+        (function () {
+            const params = new URLSearchParams(window.location.search);
+            const id = params.get('id');
+            if (id && /^\d+$/.test(id)) {
+                document.getElementById('ref-id').textContent = '#' + id;
+                document.getElementById('ref-box').style.display = 'inline-flex';
+            }
+        })();
+    </script>
+</body>
+</html>
