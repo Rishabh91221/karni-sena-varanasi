@@ -100,5 +100,5 @@
     "link": "#join"
   },
 
-  "formEndpoint": "REPLACE_WITH_FORMZERO_ENDPOINT_LATER"
+  "formEndpoint": "https://karni-sena-backend.smritiiasacademy.workers.dev"
 }
