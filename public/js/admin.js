@@ -263,7 +263,9 @@
   async function fetchPhotoInto(imgEl, key) {
     if (!key) return;
     try {
-      const res = await apiFetch('/admin/photo/' + encodeURIComponent(key));
+      // Don't encode slashes — Worker route matching needs them
+      const cleanKey = key.split('/').map(encodeURIComponent).join('/');
+      const res = await apiFetch('/admin/photo/' + cleanKey);
       if (!res.ok) { imgEl.style.background = '#F5E9D0'; return; }
       const blob = await res.blob();
       imgEl.src = URL.createObjectURL(blob);
