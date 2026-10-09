@@ -5,90 +5,105 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#7B1E1E">
     <meta name="robots" content="noindex, nofollow">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    
+    <!-- ============ SEO / TITLE ============ -->
     <title>आवेदन सफल — क्षत्रिय करणी सेना वाराणसी</title>
+    <meta name="description" content="आपका आवेदन सफलतापूर्वक जमा हो गया है। हमारी टीम शीघ्र ही आपसे संपर्क करेगी।">
 
-    <!-- Open Graph -->
+    <!-- ============ OPEN GRAPH ============ -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="क्षत्रिय करणी सेना — वाराणसी">
     <meta property="og:title" content="आवेदन सफल — क्षत्रिय करणी सेना वाराणसी">
-    <meta property="og:description" content="आपका आवेदन सफलतापूर्वक जमा हो गया है।">
+    <meta property="og:description" content="आपका आवेदन सफलतापूर्वक जमा हो गया है। हमारी टीम शीघ्र ही आपसे संपर्क करेगी।">
     <meta property="og:url" content="https://karni-sena-varanasi.pages.dev/thank-you.html">
     <meta property="og:image" content="https://karni-sena-varanasi.pages.dev/assets/logo.png">
+    <meta property="og:image:alt" content="क्षत्रिय करणी सेना वाराणसी का लोगो">
     <meta property="og:locale" content="hi_IN">
 
-    <!-- Twitter / X -->
+    <!-- ============ TWITTER / X ============ -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="आवेदन सफल — क्षत्रिय करणी सेना वाराणसी">
     <meta name="twitter:description" content="आपका आवेदन सफलतापूर्वक जमा हो गया है।">
+    <meta name="twitter:image" content="https://karni-sena-varanasi.pages.dev/assets/logo.png">
 
-    <!-- Canonical -->
+    <!-- ============ CANONICAL ============ -->
     <link rel="canonical" href="https://karni-sena-varanasi.pages.dev/thank-you.html">
-    
+
+    <!-- ============ FONTS ============ -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+
+    <!-- ============ STYLES ============ -->
     <link rel="stylesheet" href="/css/thank-you.css">
     <link rel="icon" type="image/png" href="/assets/logo.png">
 </head>
 <body>
 
-    <div class="thankyou-page">
-        <!-- Animated ॐ watermark layer -->
+    <main class="thankyou-page" role="main">
+
+        <!-- ============ DECORATIVE BACKGROUND ============ -->
         <div class="om-bg" aria-hidden="true">ॐ</div>
         <div class="om-bg om-bg-2" aria-hidden="true">ॐ</div>
         <div class="om-bg om-bg-3" aria-hidden="true">ॐ</div>
 
-        <!-- Floating particles -->
+        <!-- ============ FLOATING PARTICLES ============ -->
         <div class="particles" aria-hidden="true">
             <span></span><span></span><span></span><span></span><span></span>
             <span></span><span></span><span></span><span></span><span></span>
             <span></span><span></span><span></span><span></span><span></span>
         </div>
 
-        <div class="thankyou-content">
+        <!-- ============ CONTENT ============ -->
+        <div class="thankyou-content" role="status" aria-live="polite">
 
             <!-- Success checkmark -->
-            <div class="thankyou-check">
-                <svg viewBox="0 0 52 52" class="check-svg">
+            <div class="thankyou-check" aria-hidden="true">
+                <svg viewBox="0 0 52 52" class="check-svg" focusable="false">
                     <circle class="check-circle" cx="26" cy="26" r="24" fill="none"/>
                     <path class="check-mark" fill="none" d="M14 27l8 8 16-16"/>
                 </svg>
             </div>
 
-            <!-- Header -->
+            <!-- Organization header -->
             <div class="org-header">
-                <img src="/assets/logo.png" alt="लोगो" class="org-logo">
+                <img src="/assets/logo.png"
+                     alt="क्षत्रिय करणी सेना का लोगो"
+                     class="org-logo"
+                     width="42"
+                     height="42">
                 <div class="org-name">क्षत्रिय करणी सेना — वाराणसी</div>
             </div>
 
-            <!-- Main message -->
+            <!-- Primary message -->
             <h1 class="thankyou-message" id="thankyou-message">
                 आपका आवेदन सफलतापूर्वक जमा हो गया है
             </h1>
 
+            <!-- Sub message -->
             <p class="thankyou-sub" id="thankyou-sub">
                 हमारी टीम शीघ्र ही आपसे संपर्क करेगी।
             </p>
 
-            <!-- Reference ID box (shown if ?id=N passed) -->
+            <!-- Reference ID (shown only when a valid numeric ?id=N is in URL) -->
             <div class="ref-box" id="ref-box" style="display:none;">
-                <span class="ref-label">आपका आवेदन संदर्भ</span>
+                <span class="ref-label">आपका आवेदन संदर्भ:</span>
                 <span class="ref-id" id="ref-id">—</span>
             </div>
 
             <!-- Shloka divider -->
-            <div class="shloka-divider">
+            <div class="shloka-divider" aria-hidden="true">
                 <span class="divider-line"></span>
                 <span class="divider-om">ॐ</span>
                 <span class="divider-line"></span>
             </div>
 
-            <!-- The shloka -->
+            <!-- Shloka -->
             <div class="shloka-box">
-                <div class="shloka-text">
+                <blockquote class="shloka-text">
                     अहिंसा परमो धर्मः धर्म हिंसा तथैव च
-                </div>
+                </blockquote>
             </div>
 
             <!-- Actions -->
@@ -100,21 +115,33 @@
             <p class="contact-reminder">
                 किसी भी सहायता के लिए संपर्क करें:
                 <br>
-                <a href="tel:9140915534">📞 9140915534</a>
+                <a href="tel:8756799602" rel="noopener">📞 8756799602</a>
                 &nbsp;·&nbsp;
-                <a href="tel:8756799602">📞 8756799602</a>
+                <a href="tel:9140915534" rel="noopener">📞 9140915534</a>
             </p>
         </div>
-    </div>
+    </main>
 
+    <!-- ============ REFERENCE ID SCRIPT ============ -->
     <script>
-        // Show reference ID if present in URL
         (function () {
-            const params = new URLSearchParams(window.location.search);
-            const id = params.get('id');
-            if (id && /^\d+$/.test(id)) {
-                document.getElementById('ref-id').textContent = '#' + id;
-                document.getElementById('ref-box').style.display = 'inline-flex';
+            'use strict';
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const rawId = params.get('id');
+
+                // Strict validation: 1-10 digits only (prevents XSS / injection)
+                if (rawId && /^\d{1,10}$/.test(rawId)) {
+                    const refIdEl = document.getElementById('ref-id');
+                    const refBoxEl = document.getElementById('ref-box');
+
+                    if (refIdEl && refBoxEl) {
+                        refIdEl.textContent = '#' + rawId;
+                        refBoxEl.style.display = 'inline-flex';
+                    }
+                }
+            } catch (e) {
+                // Silent fail — never break page render
             }
         })();
     </script>
