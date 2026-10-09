@@ -1,83 +1,118 @@
 /* ============================================================
    KARNI SENA VARANASI — Admin Dashboard
-   Complete file — login, stats, list, detail, export, delete.
+   ------------------------------------------------------------
+   Authentication: X-Admin-Username + X-Admin-Password
+   Endpoints: /admin/stats, /admin/list, /admin/photo,
+              /admin/delete
+   Storage: sessionStorage (clears on browser close)
    ============================================================ */
 
 (function () {
   'use strict';
 
-  // ============ CONFIG ============
-  const API_BASE = 'https://karni-sena-backend.smritiiasacademy.workers.dev';
+  // ============ CONFIGURATION ============
+  const API_BASE = 'https://karni-sena-backend.smritiiasacademy.workers.dev/admin';
   const STORAGE_KEY = 'ks_admin_auth';
 
-  // ============ STATE ============
-  let auth = null;
+  // ============ APPLICATION STATE ============
+  let auth = null;              // { username, password } or null
   let submissions = [];
   let filters = { q: '', from: '', to: '' };
+  let searchDebounce = null;
 
-  // ============ HELPERS ============
-  const $ = (sel) => document.querySelector(sel);
+  // ============ DOM HELPERS ============
+  const $  = (sel) => document.querySelector(sel);
   const $$ = (sel) => document.querySelectorAll(sel);
 
-  function fmtDate(iso) {
-    if (!iso) return '—';
+  function el(tag, className, textContent) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (textContent != null) node.textContent = String(textContent);
+    return node;
+  }
+
+  // ============ FORMATTERS ============
+  function formatDate(isoStr) {
+    if (!isoStr) return '—';
     try {
-      const d = new Date(iso);
+      const d = new Date(isoStr);
       return d.toLocaleString('en-IN', {
         timeZone: 'Asia/Kolkata',
-        day: '2-digit', month: 'short', year: 'numeric',
-        hour: '2-digit', minute: '2-digit',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
       });
-    } catch (e) { return iso; }
+    } catch (e) {
+      return isoStr;
+    }
   }
 
-  function maskAadhaar(a) {
-    if (!a || a.length !== 12) return a || '—';
-    return 'XXXX-XXXX-' + a.slice(-4);
+  function maskAadhaar(str) {
+    if (!str || str.length !== 12) return str || '—';
+    return 'XXXX-XXXX-' + str.slice(-4);
   }
 
-  function escapeHtml(s) {
-    if (s == null) return '';
-    return String(s).replace(/[&<>"']/g, c => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-    }[c]));
-  }
-
-  // ============ AUTH ============
+  // ============ AUTH STORAGE (sessionStorage) ============
   function loadAuth() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) auth = JSON.parse(raw);
-    } catch (e) { auth = null; }
+      const raw = sessionStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.username && parsed.password) {
+        auth = parsed;
+      }
+    } catch (e) {
+      auth = null;
+    }
   }
 
   function saveAuth(a) {
     auth = a;
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(a)); } catch (e) {}
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(a));
+    } catch (e) {
+      console.warn('Unable to save auth to sessionStorage:', e);
+    }
   }
 
   function clearAuth() {
     auth = null;
-    try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+    try {
+      sessionStorage.removeItem(STORAGE_KEY);
+    } catch (e) { /* ignore */ }
   }
 
-  async function apiFetch(path, opts = {}) {
-    if (!auth) throw new Error('Not authenticated');
-    const headers = {
-      'X-Admin-Username': auth.username,
-      'X-Admin-Password': auth.password,
-      ...(opts.headers || {}),
-    };
-    const res = await fetch(API_BASE + path, { ...opts, headers });
+  // ============ API WRAPPER ============
+  async function apiFetch(path, opts) {
+    opts = opts || {};
+
+    if (!auth || !auth.username || !auth.password) {
+      throw new Error('Not authenticated');
+    }
+
+    const headers = Object.assign(
+      {
+        'X-Admin-Username': auth.username,
+        'X-Admin-Password': auth.password,
+        'Accept': 'application/json',
+      },
+      opts.headers || {}
+    );
+
+    const res = await fetch(API_BASE + path, Object.assign({}, opts, { headers }));
+
     if (res.status === 401) {
       clearAuth();
       showLogin();
       throw new Error('Session expired');
     }
+
     return res;
   }
 
-  // ============ SCREENS ============
+  // ============ VIEW SWITCHERS ============
   function showLogin() {
     const ls = $('#login-screen');
     const db = $('#dashboard');
@@ -90,6 +125,7 @@
     const db = $('#dashboard');
     if (ls) ls.style.display = 'none';
     if (db) db.style.display = 'block';
+
     loadStats();
     loadSubmissions();
   }
@@ -104,36 +140,47 @@
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      errEl.textContent = '';
 
-      const username = $('#username').value.trim();
-      const password = $('#password').value;
+      if (errEl) errEl.textContent = '';
+
+      const usernameInput = $('#username');
+      const passwordInput = $('#password');
+
+      const username = usernameInput ? usernameInput.value.trim() : '';
+      const password = passwordInput ? passwordInput.value : '';
 
       if (!username || !password) {
-        errEl.textContent = 'कृपया username और password भरें।';
+        if (errEl) errEl.textContent = 'कृपया username और password दर्ज करें।';
         return;
       }
 
-      btn.disabled = true;
-      btn.textContent = 'Checking...';
+      const originalText = btn ? btn.textContent : 'Log In';
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'प्रमाणित किया जा रहा है...';
+      }
 
       try {
-        const res = await fetch(API_BASE + '/admin/stats', {
+        const res = await fetch(API_BASE + '/stats', {
           headers: {
             'X-Admin-Username': username,
             'X-Admin-Password': password,
           },
         });
 
-        if (!res.ok) throw new Error('Invalid credentials');
+        if (!res.ok) {
+          throw new Error('Invalid credentials');
+        }
 
-        saveAuth({ username, password });
+        saveAuth({ username: username, password: password });
         showDashboard();
       } catch (err) {
-        errEl.textContent = 'गलत username या password। कृपया पुनः प्रयास करें।';
+        if (errEl) errEl.textContent = 'अमान्य username या password। कृपया पुनः प्रयास करें।';
       } finally {
-        btn.disabled = false;
-        btn.textContent = 'Log In';
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = originalText;
+        }
       }
     });
 
@@ -142,8 +189,10 @@
       logoutBtn.addEventListener('click', () => {
         clearAuth();
         showLogin();
-        const f = $('#login-form');
-        if (f) f.reset();
+        const u = $('#username');
+        const p = $('#password');
+        if (u) u.value = '';
+        if (p) p.value = '';
       });
     }
   }
@@ -151,17 +200,22 @@
   // ============ STATS ============
   async function loadStats() {
     try {
-      const res = await apiFetch('/admin/stats');
+      const res = await apiFetch('/stats');
       const data = await res.json();
-      if (data.success) {
-        const setIf = (id, v) => { const el = $(id); if (el) el.textContent = v; };
-        setIf('#stat-total', data.stats.total);
-        setIf('#stat-today', data.stats.today);
-        setIf('#stat-week', data.stats.week);
-        setIf('#stat-month', data.stats.month);
+
+      if (data.success && data.stats) {
+        const set = (id, v) => {
+          const node = $(id);
+          if (node) node.textContent = v != null ? String(v) : '0';
+        };
+
+        set('#stat-total', data.stats.total);
+        set('#stat-today', data.stats.today);
+        set('#stat-week',  data.stats.week);
+        set('#stat-month', data.stats.month);
       }
     } catch (err) {
-      console.error('Stats load failed:', err);
+      console.error('loadStats error:', err);
     }
   }
 
@@ -169,7 +223,11 @@
   async function loadSubmissions() {
     const statusEl = $('#table-status');
     const tableEl = $('#submissions-table');
-    if (statusEl) { statusEl.textContent = 'लोड हो रहा है...'; statusEl.style.display = 'block'; }
+
+    if (statusEl) {
+      statusEl.textContent = 'लोड हो रहा है...';
+      statusEl.style.display = 'block';
+    }
     if (tableEl) tableEl.style.display = 'none';
 
     try {
@@ -177,17 +235,22 @@
       if (filters.q)    params.set('q', filters.q);
       if (filters.from) params.set('from', filters.from);
       if (filters.to)   params.set('to', filters.to);
+
       const qs = params.toString();
-
-      const res = await apiFetch('/admin/list' + (qs ? '?' + qs : ''));
+      const res = await apiFetch('/list' + (qs ? '?' + qs : ''));
       const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'Unknown');
 
-      submissions = data.submissions || [];
+      if (!data.success) {
+        throw new Error(data.error || 'Fetch failed');
+      }
+
+      submissions = Array.isArray(data.submissions) ? data.submissions : [];
       renderTable();
     } catch (err) {
-      console.error('List failed:', err);
-      if (statusEl) statusEl.textContent = 'डेटा लोड नहीं हो सका: ' + err.message;
+      console.error('loadSubmissions error:', err);
+      if (statusEl) {
+        statusEl.textContent = 'डेटा लोड नहीं हो सका: ' + (err.message || 'Error');
+      }
     }
   }
 
@@ -198,155 +261,256 @@
     if (!tbody) return;
 
     if (submissions.length === 0) {
-      if (statusEl) { statusEl.textContent = 'कोई आवेदन नहीं मिला।'; statusEl.style.display = 'block'; }
+      if (statusEl) {
+        statusEl.textContent = 'कोई आवेदन नहीं मिला।';
+        statusEl.style.display = 'block';
+      }
       if (tableEl) tableEl.style.display = 'none';
       return;
     }
 
-    tbody.innerHTML = '';
-    submissions.forEach(s => {
+    tbody.replaceChildren();
+
+    submissions.forEach((item) => {
       const tr = document.createElement('tr');
-      tr.innerHTML =
-        '<td class="cell-id">#' + s.id + '</td>' +
-        '<td>' + escapeHtml(s.name) + '</td>' +
-        '<td>' + escapeHtml(s.father_name) + '</td>' +
-        '<td class="cell-mobile">' + escapeHtml(s.mobile) + '</td>' +
-        '<td class="cell-aadhaar">' + maskAadhaar(s.aadhaar) + '</td>' +
-        '<td>' + escapeHtml(s.district) + '</td>' +
-        '<td>' + (s.photo_key
-          ? '<img class="photo-thumb" data-key="' + escapeHtml(s.photo_key) + '" alt="" loading="lazy">'
-          : '—') + '</td>' +
-        '<td>' + fmtDate(s.submitted_at) + '</td>' +
-        '<td><div class="row-actions">' +
-          '<button class="view-btn" data-id="' + s.id + '" title="View">👁️</button>' +
-          '<button class="delete-btn" data-id="' + s.id + '" data-name="' + escapeHtml(s.name) + '" title="Delete">🗑️</button>' +
-        '</div></td>';
 
-      tr.addEventListener('click', (e) => {
-        if (e.target.closest('.row-actions')) return;
-        openDetail(s);
-      });
-      tbody.appendChild(tr);
-    });
+      // ID
+      tr.appendChild(el('td', 'cell-id', '#' + item.id));
 
-    // Load photos with auth
-    tbody.querySelectorAll('img.photo-thumb').forEach(img => {
-      fetchPhotoInto(img, img.dataset.key);
-    });
+      // Name
+      tr.appendChild(el('td', '', item.name || '—'));
 
-    // Delete handlers
-    tbody.querySelectorAll('.delete-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
+      // Father's name
+      tr.appendChild(el('td', '', item.father_name || '—'));
+
+      // Mobile
+      tr.appendChild(el('td', 'cell-mobile', item.mobile || '—'));
+
+      // Aadhaar (masked)
+      tr.appendChild(el('td', 'cell-aadhaar', maskAadhaar(item.aadhaar)));
+
+      // District
+      tr.appendChild(el('td', '', item.district || '—'));
+
+      // Photo
+      const tdPhoto = document.createElement('td');
+      if (item.photo_key) {
+        const img = document.createElement('img');
+        img.className = 'photo-thumb';
+        img.alt = item.name || 'Photo';
+        img.loading = 'lazy';
+        img.dataset.key = item.photo_key;
+        tdPhoto.appendChild(img);
+        fetchPhotoInto(img, item.photo_key);
+      } else {
+        tdPhoto.textContent = '—';
+      }
+      tr.appendChild(tdPhoto);
+
+      // Date
+      tr.appendChild(el('td', '', formatDate(item.submitted_at)));
+
+      // Actions
+      const tdActions = document.createElement('td');
+      const wrap = el('div', 'row-actions');
+
+      const btnView = el('button', 'view-btn', '👁️');
+      btnView.type = 'button';
+      btnView.title = 'विवरण देखें';
+      btnView.addEventListener('click', (e) => {
         e.stopPropagation();
-        const id = btn.dataset.id;
-        const name = btn.dataset.name;
-        if (!confirm('Delete submission #' + id + ' (' + name + ')?\nयह वापस नहीं आएगा।')) return;
-        try {
-          const res = await apiFetch('/admin/delete/' + id, { method: 'DELETE' });
-          const data = await res.json();
-          if (data.success) {
-            loadSubmissions();
-            loadStats();
-          } else {
-            alert('Delete failed: ' + (data.error || 'unknown'));
-          }
-        } catch (err) {
-          alert('Delete failed: ' + err.message);
-        }
+        openDetailModal(item);
       });
+
+      const btnDelete = el('button', 'delete-btn', '🗑️');
+      btnDelete.type = 'button';
+      btnDelete.title = 'हटाएँ';
+      btnDelete.addEventListener('click', (e) => {
+        e.stopPropagation();
+        confirmAndDelete(item.id, item.name);
+      });
+
+      wrap.appendChild(btnView);
+      wrap.appendChild(btnDelete);
+      tdActions.appendChild(wrap);
+      tr.appendChild(tdActions);
+
+      // Click row (outside of action buttons) opens detail
+      tr.addEventListener('click', () => openDetailModal(item));
+
+      tbody.appendChild(tr);
     });
 
     if (statusEl) statusEl.style.display = 'none';
     if (tableEl) tableEl.style.display = 'table';
   }
 
+  // ============ PHOTO FETCHER ============
   async function fetchPhotoInto(imgEl, key) {
-    if (!key) return;
+    if (!key || !imgEl) return;
+
     try {
-      // Don't encode slashes — Worker route matching needs them
-      const cleanKey = key.split('/').map(encodeURIComponent).join('/');
-      const res = await apiFetch('/admin/photo/' + cleanKey);
-      if (!res.ok) { imgEl.style.background = '#F5E9D0'; return; }
+      // Encodes slashes inside the key safely
+      const encodedKey = key.split('/').map(encodeURIComponent).join('/');
+      const res = await apiFetch('/photo/' + encodedKey);
+
+      if (!res.ok) {
+        imgEl.style.background = '#F5E9D0';
+        return;
+      }
+
       const blob = await res.blob();
-      imgEl.src = URL.createObjectURL(blob);
-    } catch (e) {
+      const url = URL.createObjectURL(blob);
+      imgEl.src = url;
+
+      // Revoke after rendering to free memory
+      imgEl.onload = () => {
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      };
+    } catch (err) {
       imgEl.style.background = '#F5E9D0';
-      console.warn('Photo fetch failed:', e);
+      console.warn('fetchPhotoInto error:', err);
+    }
+  }
+
+  // ============ DELETE ============
+  async function confirmAndDelete(id, name) {
+    const msg =
+      'क्या आप निश्चित रूप से आवेदन #' + id +
+      (name ? ' (' + name + ')' : '') +
+      ' को हटाना चाहते हैं?\nयह क्रिया अपरिवर्तनीय है।';
+
+    if (!confirm(msg)) return;
+
+    try {
+      const res = await apiFetch('/delete/' + id, { method: 'DELETE' });
+      const data = await res.json();
+
+      if (data.success) {
+        loadSubmissions();
+        loadStats();
+      } else {
+        alert('हटाने में विफलता: ' + (data.error || 'Server error'));
+      }
+    } catch (err) {
+      alert('त्रुटि: हटाना पूरा नहीं हो सका।');
     }
   }
 
   // ============ DETAIL MODAL ============
-  function openDetail(s) {
+  function openDetailModal(item) {
     const modal = $('#modal-backdrop');
     const body = $('#modal-body');
     if (!modal || !body) return;
 
-    const photoHtml = s.photo_key
-      ? '<img class="detail-photo" id="detail-photo" alt="फोटो" loading="lazy">'
-      : '<p style="text-align:center;color:#888;">कोई फोटो नहीं</p>';
+    body.replaceChildren();
 
-    body.innerHTML =
-      photoHtml +
-      '<dl class="detail-grid">' +
-        '<dt>ID</dt><dd class="mono">#' + s.id + '</dd>' +
-        '<dt>नाम</dt><dd>' + escapeHtml(s.name) + '</dd>' +
-        '<dt>पिता का नाम</dt><dd>' + escapeHtml(s.father_name) + '</dd>' +
-        '<dt>पता</dt><dd>' + escapeHtml(s.address) + '</dd>' +
-        '<dt>जिला</dt><dd>' + escapeHtml(s.district) + '</dd>' +
-        '<dt>राज्य</dt><dd>' + escapeHtml(s.state) + '</dd>' +
-        '<dt>मोबाइल</dt><dd class="mono">' + escapeHtml(s.mobile) + '</dd>' +
-        '<dt>आधार</dt><dd class="mono">' + maskAadhaar(s.aadhaar) + '</dd>' +
-        (s.additional ? '<dt>अतिरिक्त</dt><dd>' + escapeHtml(s.additional) + '</dd>' : '') +
-        '<dt>दिनांक</dt><dd>' + fmtDate(s.submitted_at) + '</dd>' +
-      '</dl>';
+    // Photo
+    if (item.photo_key) {
+      const img = document.createElement('img');
+      img.className = 'detail-photo';
+      img.alt = item.name || 'Photo';
+      img.loading = 'lazy';
+      body.appendChild(img);
+      fetchPhotoInto(img, item.photo_key);
+    } else {
+      const p = el('p', '', 'कोई फोटो उपलब्ध नहीं है');
+      p.style.textAlign = 'center';
+      p.style.color = '#888';
+      body.appendChild(p);
+    }
+
+    // Details list
+    const details = [
+      { label: 'संदर्भ ID',           value: '#' + item.id },
+      { label: 'उम्मीदवार का नाम',    value: item.name },
+      { label: 'पिता का नाम',         value: item.father_name },
+      { label: 'पता',                 value: item.address },
+      { label: 'जिला',                value: item.district },
+      { label: 'राज्य',               value: item.state },
+      { label: 'मोबाइल',              value: item.mobile },
+      { label: 'आधार नंबर',           value: maskAadhaar(item.aadhaar) },
+      { label: 'अतिरिक्त विवरण',      value: item.additional || 'कोई अतिरिक्त जानकारी नहीं' },
+      { label: 'जमा करने की तिथि',    value: formatDate(item.submitted_at) },
+    ];
+
+    const dl = el('dl', 'detail-grid');
+    details.forEach(({ label, value }) => {
+      dl.appendChild(el('dt', '', label));
+      dl.appendChild(el('dd', '', value));
+    });
+
+    body.appendChild(dl);
 
     modal.style.display = 'flex';
-
-    if (s.photo_key) {
-      const ph = $('#detail-photo');
-      if (ph) fetchPhotoInto(ph, s.photo_key);
-    }
+    modal.setAttribute('aria-hidden', 'false');
   }
 
   function closeModal() {
     const modal = $('#modal-backdrop');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+      modal.style.display = 'none';
+      modal.setAttribute('aria-hidden', 'true');
+    }
   }
 
-  // ============ EXPORT CSV ============
+  // ============ CSV EXPORT ============
   function exportCsv() {
-    if (!submissions.length) {
-      alert('कोई डेटा नहीं है।');
+    if (!submissions || submissions.length === 0) {
+      alert('निर्यात के लिए कोई डेटा उपलब्ध नहीं है।');
       return;
     }
 
-    const headers = ['ID', 'Name', 'Father Name', 'Address', 'District', 'State', 'Mobile', 'Aadhaar', 'Photo Key', 'Additional', 'Submitted At'];
+    const headers = [
+      'ID', 'Name', 'Father Name', 'Address', 'District', 'State',
+      'Mobile', 'Aadhaar', 'Photo Key', 'Additional', 'Submitted At',
+    ];
+
+    function sanitizeField(v) {
+      if (v == null) return '';
+      const s = String(v);
+      // Escape quotes, wrap if contains comma, quote or newline
+      if (/[",\n\r]/.test(s)) {
+        return '"' + s.replace(/"/g, '""') + '"';
+      }
+      return s;
+    }
+
     const rows = submissions.map(s => [
-      s.id, s.name, s.father_name, s.address, s.district, s.state,
-      s.mobile, s.aadhaar, s.photo_key || '', s.additional || '', s.submitted_at,
+      s.id,
+      s.name,
+      s.father_name,
+      s.address,
+      s.district,
+      s.state,
+      s.mobile,
+      s.aadhaar,
+      s.photo_key || '',
+      s.additional || '',
+      s.submitted_at || '',
     ]);
 
-    const esc = (v) => {
-      if (v == null) return '';
-      const str = String(v);
-      return /[",\n\r]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str;
-    };
+    const lines = [
+      headers.map(sanitizeField).join(','),
+      ...rows.map(r => r.map(sanitizeField).join(',')),
+    ];
 
-    const csv = [headers, ...rows].map(r => r.map(esc).join(',')).join('\r\n');
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    // Add BOM so Excel reads UTF-8 (Hindi) correctly
+    const csv = '\uFEFF' + lines.join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
 
     const a = document.createElement('a');
     a.href = url;
-    const today = new Date().toISOString().slice(0, 10);
-    a.download = 'karni-sena-submissions-' + today + '.csv';
+    a.download = 'karni_sena_submissions_' + new Date().toISOString().slice(0, 10) + '.csv';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  // ============ FILTERS & BUTTONS ============
+  // ============ CONTROLS ============
   function setupControls() {
     const searchInput = $('#search-input');
     const dateFrom = $('#date-from');
@@ -357,11 +521,10 @@
     const modalClose = $('#modal-close');
     const modalBackdrop = $('#modal-backdrop');
 
-    let debounce;
     if (searchInput) {
       searchInput.addEventListener('input', () => {
-        clearTimeout(debounce);
-        debounce = setTimeout(() => {
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(() => {
           filters.q = searchInput.value.trim();
           loadSubmissions();
         }, 400);
@@ -400,7 +563,6 @@
     }
 
     if (exportBtn) exportBtn.addEventListener('click', exportCsv);
-
     if (modalClose) modalClose.addEventListener('click', closeModal);
 
     if (modalBackdrop) {
@@ -414,23 +576,31 @@
     });
   }
 
-  // ============ INIT ============
-  document.addEventListener('DOMContentLoaded', () => {
+  // ============ INITIALIZATION ============
+  document.addEventListener('DOMContentLoaded', async () => {
     loadAuth();
     setupLogin();
     setupControls();
 
+    // If session has valid-looking auth, verify it before showing dashboard
     if (auth && auth.username && auth.password) {
-      // Verify stored credentials still work
-      fetch(API_BASE + '/admin/stats', {
-        headers: {
-          'X-Admin-Username': auth.username,
-          'X-Admin-Password': auth.password,
-        },
-      }).then(res => {
-        if (res.ok) showDashboard();
-        else { clearAuth(); showLogin(); }
-      }).catch(() => showLogin());
+      try {
+        const res = await fetch(API_BASE + '/stats', {
+          headers: {
+            'X-Admin-Username': auth.username,
+            'X-Admin-Password': auth.password,
+          },
+        });
+
+        if (res.ok) {
+          showDashboard();
+        } else {
+          clearAuth();
+          showLogin();
+        }
+      } catch (err) {
+        showLogin();
+      }
     } else {
       showLogin();
     }
