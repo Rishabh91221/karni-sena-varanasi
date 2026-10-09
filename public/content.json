@@ -5,22 +5,20 @@
     "topbar": "॥ जय माँ करणी ॥",
     "logo": "/assets/logo.png"
   },
-
   "header": {
     "navItems": [
-      { "id": "home",     "label": "Home",      "link": "#home" },
-      { "id": "about",    "label": "About Us",  "link": "#about" },
-      { "id": "agenda",   "label": "Agenda",    "link": "#agenda" },
-      { "id": "leaders",  "label": "Leaders",   "link": "#leaders" },
-      { "id": "activity", "label": "Activity",  "link": "#activity" },
-      { "id": "news",     "label": "News",      "link": "#news" },
-      { "id": "gallery",  "label": "Gallery",   "link": "#gallery" },
-      { "id": "contact",  "label": "Contact",   "link": "#contact" }
+      { "id": "home", "label": "Home", "link": "#home" },
+      { "id": "about", "label": "About Us", "link": "#about" },
+      { "id": "agenda", "label": "Agenda", "link": "#agenda" },
+      { "id": "leaders", "label": "Leaders", "link": "#leaders" },
+      { "id": "activity", "label": "Activity", "link": "#activity" },
+      { "id": "news", "label": "News", "link": "#news" },
+      { "id": "gallery", "label": "Gallery", "link": "#gallery" },
+      { "id": "contact", "label": "Contact", "link": "#contact" }
     ],
     "ctaText": "JOIN KARNI SENA",
     "ctaLink": "#join"
   },
-
   "hero": {
     "slides": [
       {
@@ -47,7 +45,6 @@
     "secondaryButton": "और जानें",
     "secondaryLink": "#about"
   },
-
   "about": {
     "title": "हमारे बारे में",
     "subtitle": "About Us",
@@ -58,11 +55,10 @@
     ],
     "stats": [
       { "value": "5000+", "label": "सदस्य" },
-      { "value": "50+",   "label": "गाँव" },
-      { "value": "100+",  "label": "कार्यक्रम" }
+      { "value": "50+", "label": "गाँव" },
+      { "value": "100+", "label": "कार्यक्रम" }
     ]
   },
-
   "agenda": {
     "title": "एजेंडा",
     "subtitle": "Agenda / हमारा लक्ष्य",
@@ -100,17 +96,15 @@
       }
     ]
   },
-
   "headOfRegion": {
     "title": "प्रमुख",
     "subtitle": "Head of Region — Varanasi",
     "name": "रुद्र ठाकुर",
-    "role": "जिला उपाध्यक्ष, वाराणसीी",
+    "role": "जिला उपाध्यक्ष, वाराणसी",
     "photo": "/assets/team/head.jpg",
     "message": "वाराणसी जिला टीम की ओर से सभी साथियों का हार्दिक स्वागत है। संगठन के साथ जुड़कर आप समाज सेवा और राष्ट्र निर्माण में अपना योगदान दे सकते हैं। हमारा प्रयास है कि हर साथी को सम्मान और सहयोग मिले।",
     "phone": "8756799602"
   },
-
   "team": {
     "title": "नेतृत्व",
     "subtitle": "Leaders — वाराणसी जिला टीम",
@@ -132,7 +126,6 @@
       }
     ]
   },
-
   "activity": {
     "title": "गतिविधियाँ",
     "subtitle": "Activity",
@@ -155,7 +148,6 @@
       }
     ]
   },
-
   "news": {
     "title": "समाचार",
     "subtitle": "News & Updates",
@@ -178,21 +170,20 @@
       }
     ]
   },
-
   "gallery": {
     "title": "फ़ोटो गैलरी",
     "subtitle": "Gallery",
     "description": "संगठन की विभिन्न गतिविधियों की झलकियाँ",
     "images": [
-      { "src": "/assets/gallery/1.jpg",  "caption": "सामाजिक कार्यक्रम" },
-      { "src": "/assets/gallery/2.jpg",  "caption": "युवा बैठक" },
-      { "src": "/assets/gallery/3.jpg",  "caption": "सेवा कार्य" },
-      { "src": "/assets/gallery/4.jpg",  "caption": "धार्मिक आयोजन" },
-      { "src": "/assets/gallery/5.jpg",  "caption": "समाजसेवा" },
-      { "src": "/assets/gallery/6.jpg",  "caption": "युवा सम्मेलन" },
-      { "src": "/assets/gallery/7.jpg",  "caption": "सांस्कृतिक कार्यक्रम" },
-      { "src": "/assets/gallery/8.jpg",  "caption": "समाज बैठक" },
-      { "src": "/assets/gallery/9.jpg",  "caption": "सहायता कार्यक्रम" },
+      { "src": "/assets/gallery/1.jpg", "caption": "सामाजिक कार्यक्रम" },
+      { "src": "/assets/gallery/2.jpg", "caption": "युवा बैठक" },
+      { "src": "/assets/gallery/3.jpg", "caption": "सेवा कार्य" },
+      { "src": "/assets/gallery/4.jpg", "caption": "धार्मिक आयोजन" },
+      { "src": "/assets/gallery/5.jpg", "caption": "समाजसेवा" },
+      { "src": "/assets/gallery/6.jpg", "caption": "युवा सम्मेलन" },
+      { "src": "/assets/gallery/7.jpg", "caption": "सांस्कृतिक कार्यक्रम" },
+      { "src": "/assets/gallery/8.jpg", "caption": "समाज बैठक" },
+      { "src": "/assets/gallery/9.jpg", "caption": "सहायता कार्यक्रम" },
       { "src": "/assets/gallery/10.jpg", "caption": "जिला स्तरीय बैठक" },
       { "src": "/assets/gallery/11.jpg", "caption": "युवा नेतृत्व" },
       { "src": "/assets/gallery/12.jpg", "caption": "समाज सेवा" },
@@ -201,7 +192,6 @@
       { "src": "/assets/gallery/15.jpg", "caption": "वार्षिक उत्सव" }
     ]
   },
-
   "office": {
     "title": "कार्यालय",
     "subtitle": "Office Address",
@@ -212,7 +202,6 @@
     "hours": "सोमवार से शनिवार · सुबह 10:00 से शाम 6:00 तक",
     "note": "किसी भी जानकारी के लिए कार्यालय समय में संपर्क करें।"
   },
-
   "joinForm": {
     "title": "Joining Form",
     "subtitle": "सदस्यता फॉर्म",
@@ -232,7 +221,6 @@
     "submitText": "आवेदन जमा करें",
     "resetText": "फ़ॉर्म साफ़ करें"
   },
-
   "contact": {
     "title": "संपर्क करें",
     "subtitle": "Contact Us",
@@ -241,7 +229,6 @@
     "address": "वाराणसी, उत्तर प्रदेश",
     "email": ""
   },
-
   "footer": {
     "tagline": "जिला टीम से जुड़ने और joining आवेदन के लिए इस वेबसाइट का उपयोग करें।",
     "copyright": "© 2026 क्षत्रिय करणी सेना, वाराणसी. सभी अधिकार सुरक्षित।",
@@ -252,6 +239,5 @@
       { "label": "संपर्क", "link": "#contact" }
     ]
   },
-
   "formEndpoint": "https://karni-sena-backend.smritiiasacademy.workers.dev"
 }
