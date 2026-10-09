@@ -1,30 +1,53 @@
 /* ============================================================
-   ADMIN DASHBOARD STYLES
+   KARNI SENA VARANASI — Admin Dashboard Stylesheet
+   ------------------------------------------------------------
+   - Login screen
+   - Dashboard header
+   - Stats grid, toolbar, data table
+   - Detail modal
+   - Responsive layouts
+   - Reduced-motion support
    ============================================================ */
 
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
 :root {
-    --saffron:       #E87A1E;
-    --saffron-dark:  #C6600F;
-    --maroon:        #7B1E1E;
-    --maroon-dark:   #5A1414;
-    --gold:          #D4AF37;
-    --cream:         #FFF8E7;
-    --cream-dark:    #F5E9D0;
-    --text:          #2A1A0A;
-    --text-muted:    #6B5A48;
-    --border:        #E8D5B7;
-    --white:         #FFFFFF;
-    --error:         #C81E1E;
-    --success:       #1E9E5C;
-    --radius:        10px;
-    --radius-lg:     16px;
-    --shadow-sm:     0 2px 8px rgba(123, 30, 30, 0.08);
-    --shadow:        0 6px 24px rgba(123, 30, 30, 0.12);
+    --saffron:        #E87A1E;
+    --saffron-light:  #F5A623;
+    --saffron-dark:   #C6600F;
+    --maroon:         #7B1E1E;
+    --maroon-dark:    #5A1414;
+    --gold:           #D4AF37;
+    --cream:          #FFF8E7;
+    --cream-dark:     #F5E9D0;
+    --text:           #2A1A0A;
+    --text-muted:     #574837;
+    --border:         #E8D5B7;
+    --white:          #FFFFFF;
+    --error:          #C81E1E;
+    --success:        #1E9E5C;
+
+    --radius:         10px;
+    --radius-lg:      16px;
+
+    --shadow-sm:      0 2px 8px rgba(123, 30, 30, 0.08);
+    --shadow:         0 6px 24px rgba(123, 30, 30, 0.12);
+
     --font-hi: 'Tiro Devanagari Hindi', serif;
     --font-en: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
 body {
     font-family: var(--font-en), var(--font-hi);
@@ -33,10 +56,35 @@ body {
     line-height: 1.5;
     min-height: 100vh;
     font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
 }
 
-button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
-input, select, textarea { font-family: inherit; font-size: inherit; }
+button {
+    font-family: inherit;
+    font-size: inherit;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: inherit;
+}
+
+input,
+select,
+textarea {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+}
+
+/* Accessible focus ring */
+:focus-visible {
+    outline: 3px solid var(--gold);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
 
 /* ============================================================
    LOGIN SCREEN
@@ -106,15 +154,18 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
     border: 1.5px solid var(--border);
     border-radius: var(--radius);
     background: var(--white);
-    transition: all 0.2s;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .field input:focus {
     outline: none;
     border-color: var(--saffron);
-    box-shadow: 0 0 0 4px rgba(232, 122, 30, 0.12);
+    box-shadow: 0 0 0 4px rgba(232, 122, 30, 0.15);
 }
 
+/* ============================================================
+   BUTTONS
+   ============================================================ */
 .btn {
     display: inline-flex;
     align-items: center;
@@ -124,7 +175,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
     border-radius: 999px;
     font-weight: 600;
     font-size: 0.95rem;
-    transition: all 0.25s ease;
+    transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
     text-decoration: none;
     border: 2px solid transparent;
 }
@@ -152,40 +203,56 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
     background: var(--cream);
 }
 
-.btn-small { padding: 0.6rem 1.1rem; font-size: 0.85rem; }
-.btn-full { width: 100%; }
+.btn-small {
+    padding: 0.6rem 1.1rem;
+    font-size: 0.85rem;
+}
+
+.btn-full {
+    width: 100%;
+}
 
 .btn-text {
     padding: 0.5rem 0.8rem;
     color: var(--text-muted);
     font-size: 0.9rem;
     border-radius: var(--radius);
-    transition: all 0.2s;
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-.btn-text:hover { background: var(--cream); color: var(--text); }
+.btn-text:hover {
+    background: var(--cream);
+    color: var(--text);
+}
 
+/* Login error */
 .login-error {
     color: var(--error);
     font-size: 0.88rem;
     margin-top: 0.8rem;
     min-height: 1.2rem;
+    font-weight: 600;
 }
 
 .back-home {
-    display: block;
+    display: inline-block;
     margin-top: 1.5rem;
     color: var(--text-muted);
     font-size: 0.85rem;
     text-decoration: none;
+    transition: color 0.2s ease;
 }
 
-.back-home:hover { color: var(--maroon); }
+.back-home:hover {
+    color: var(--maroon);
+}
 
 /* ============================================================
-   DASHBOARD
+   DASHBOARD HEADER
    ============================================================ */
-.dashboard { min-height: 100vh; }
+.dashboard {
+    min-height: 100vh;
+}
 
 .admin-header {
     background: var(--maroon);
@@ -215,6 +282,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
     background: var(--white);
     padding: 2px;
     object-fit: cover;
+    flex-shrink: 0;
 }
 
 .admin-header strong {
@@ -234,6 +302,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
     display: flex;
     gap: 0.3rem;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .admin-header-right .btn-text {
@@ -241,12 +310,12 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
 }
 
 .admin-header-right .btn-text:hover {
-    background: rgba(255,255,255,0.12);
+    background: rgba(255, 255, 255, 0.15);
     color: var(--white);
 }
 
 /* ============================================================
-   MAIN
+   MAIN CONTAINER
    ============================================================ */
 .admin-main {
     max-width: 1400px;
@@ -269,7 +338,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border);
     text-align: center;
-    transition: transform 0.25s, box-shadow 0.25s;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .stat-card:hover {
@@ -277,7 +346,10 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
     box-shadow: var(--shadow);
 }
 
-.stat-icon { font-size: 1.8rem; margin-bottom: 0.4rem; }
+.stat-icon {
+    font-size: 1.8rem;
+    margin-bottom: 0.4rem;
+}
 
 .stat-value {
     font-family: var(--font-en);
@@ -294,7 +366,9 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
     margin-top: 0.3rem;
 }
 
-/* Toolbar */
+/* ============================================================
+   TOOLBAR
+   ============================================================ */
 .toolbar {
     background: var(--white);
     padding: 0.9rem 1.1rem;
@@ -325,6 +399,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
     background: var(--white);
     font-size: 0.88rem;
     min-width: 180px;
+    transition: border-color 0.2s ease;
 }
 
 .toolbar input[type="search"]:focus,
@@ -333,13 +408,15 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
     border-color: var(--saffron);
 }
 
-/* Table */
+/* ============================================================
+   DATA TABLE
+   ============================================================ */
 .table-wrap {
     background: var(--white);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border);
-    overflow: hidden;
+    overflow-x: auto;
 }
 
 .table-status {
@@ -353,6 +430,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
     width: 100%;
     border-collapse: collapse;
     font-size: 0.85rem;
+    min-width: 760px;
 }
 
 .submissions-table thead {
@@ -376,15 +454,22 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
     border-bottom: 1px solid var(--border);
     vertical-align: middle;
     font-family: var(--font-hi);
+    overflow-wrap: break-word;
+    word-wrap: break-word;
 }
 
 .submissions-table tbody tr {
-    transition: background 0.15s;
+    transition: background-color 0.15s ease;
     cursor: pointer;
 }
 
-.submissions-table tbody tr:hover { background: var(--cream); }
-.submissions-table tbody tr:last-child td { border-bottom: none; }
+.submissions-table tbody tr:hover {
+    background: var(--cream);
+}
+
+.submissions-table tbody tr:last-child td {
+    border-bottom: none;
+}
 
 .photo-thumb {
     width: 42px;
@@ -396,9 +481,20 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
     display: block;
 }
 
-.cell-id { font-family: var(--font-en); font-weight: 700; color: var(--maroon); }
-.cell-mobile, .cell-aadhaar { font-family: var(--font-en); font-size: 0.82rem; white-space: nowrap; }
+.cell-id {
+    font-family: var(--font-en);
+    font-weight: 700;
+    color: var(--maroon);
+}
 
+.cell-mobile,
+.cell-aadhaar {
+    font-family: var(--font-en);
+    font-size: 0.82rem;
+    white-space: nowrap;
+}
+
+/* Row actions */
 .row-actions {
     display: flex;
     gap: 0.3rem;
@@ -409,19 +505,29 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
     border-radius: 6px;
     font-size: 0.85rem;
     background: var(--cream);
-    transition: all 0.15s;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    min-width: 36px;
+    min-height: 36px;
 }
 
-.row-actions button:hover { background: var(--cream-dark); }
-.row-actions .delete-btn:hover { background: #FFE0E0; color: var(--error); }
+.row-actions button:hover {
+    background: var(--cream-dark);
+}
+
+.row-actions .delete-btn:hover {
+    background: #FFE0E0;
+    color: var(--error);
+}
 
 /* ============================================================
-   MODAL
+   DETAIL MODAL
    ============================================================ */
 .modal-backdrop {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -430,7 +536,10 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
     animation: fadeIn 0.2s ease;
 }
 
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
 
 .modal {
     background: var(--white);
@@ -442,11 +551,12 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
     display: flex;
     flex-direction: column;
     animation: slideUp 0.25s ease;
+    box-shadow: var(--shadow);
 }
 
 @keyframes slideUp {
     from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+    to   { transform: translateY(0);    opacity: 1; }
 }
 
 .modal-header {
@@ -456,6 +566,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .modal-header h2 {
@@ -468,9 +579,17 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
     font-size: 1.4rem;
     padding: 0.2rem 0.6rem;
     border-radius: 6px;
+    transition: background-color 0.15s ease;
+    min-width: 36px;
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.modal-close:hover { background: rgba(255,255,255,0.15); }
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
 
 .modal-body {
     padding: 1.5rem;
@@ -508,27 +627,79 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
     word-break: break-word;
 }
 
-.detail-grid dd.mono { font-family: var(--font-en); letter-spacing: 0.5px; }
-
-/* ============================================================
-   RESPONSIVE
-   ============================================================ */
-@media (max-width: 720px) {
-    .toolbar { flex-direction: column; align-items: stretch; }
-    .toolbar-left, .toolbar-right { justify-content: space-between; }
-    .toolbar input[type="search"] { flex: 1; min-width: 0; }
-
-    .table-wrap { overflow-x: auto; }
-    .submissions-table { font-size: 0.78rem; min-width: 800px; }
-
-    .detail-grid { grid-template-columns: 1fr; gap: 0.3rem; }
-    .detail-grid dt { margin-top: 0.5rem; }
+.detail-grid dd.mono {
+    font-family: var(--font-en);
+    letter-spacing: 0.5px;
 }
 
+/* ============================================================
+   RESPONSIVE LAYOUTS
+   ============================================================ */
+
+/* Tablet */
+@media (max-width: 720px) {
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .toolbar-left,
+    .toolbar-right {
+        justify-content: space-between;
+    }
+
+    .toolbar input[type="search"] {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .detail-grid {
+        grid-template-columns: 1fr;
+        gap: 0.3rem;
+    }
+
+    .detail-grid dt {
+        margin-top: 0.5rem;
+    }
+}
+
+/* Phone */
 @media (max-width: 480px) {
-    .admin-header { padding: 0.7rem 1rem; }
-    .admin-header strong { font-size: 0.9rem; }
-    .admin-header small { display: none; }
-    .admin-logo { width: 36px; height: 36px; }
-    .stat-value { font-size: 1.6rem; }
+    .admin-header {
+        padding: 0.7rem 1rem;
+    }
+
+    .admin-header strong {
+        font-size: 0.9rem;
+    }
+
+    .admin-header small {
+        display: none;
+    }
+
+    .admin-logo {
+        width: 36px;
+        height: 36px;
+    }
+
+    .stat-value {
+        font-size: 1.6rem;
+    }
+
+    .login-card {
+        padding: 2rem 1.5rem;
+    }
+}
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }
