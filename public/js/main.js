@@ -1,44 +1,44 @@
 /* ============================================================
-   KARNI SENA VARANASI — Main Script
-   Renders all sections, manages slider, mobile drawer, form.
+   KARNI SENA VARANASI — Main Script (Secured & Optimized)
    ============================================================ */
 
 (function () {
   'use strict';
 
-  // ============ HELPERS ============
-  const $  = (sel, root = document) => root.querySelector(sel);
+  // ============ DOM HELPERS ============
+  const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => root.querySelectorAll(sel);
 
   function setText(id, value) {
-    const el = document.getElementById(id);
-    if (el && value != null) el.textContent = value;
+    const node = document.getElementById(id);
+    if (node && value != null) {
+      node.textContent = String(value);
+    }
   }
 
   function setAttr(id, attr, value) {
-    const el = document.getElementById(id);
-    if (el && value != null) el.setAttribute(attr, value);
+    const node = document.getElementById(id);
+    if (node && value != null) {
+      node.setAttribute(attr, String(value));
+    }
   }
 
-  function el(tag, className, html) {
-    const e = document.createElement(tag);
-    if (className) e.className = className;
-    if (html != null) e.innerHTML = html;
-    return e;
+  function createElement(tag, className, textContent) {
+    const elem = document.createElement(tag);
+    if (className) elem.className = className;
+    if (textContent != null) elem.textContent = String(textContent);
+    return elem;
   }
 
-  function escapeHtml(s) {
-    if (s == null) return '';
-    return String(s).replace(/[&<>"']/g, c => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    }[c]));
+  function sanitizeInput(val) {
+    return typeof val === 'string' ? val.trim() : '';
   }
 
   // ============ LOAD CONTENT ============
   async function loadContent() {
     try {
-      const res = await fetch('/content.json?v=' + Date.now());
-      if (!res.ok) throw new Error('content.json not found');
+      const res = await fetch('/content.json?v=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP error! status: ' + res.status);
       return await res.json();
     } catch (err) {
       console.error('[main.js] Content load error:', err);
@@ -46,10 +46,10 @@
     }
   }
 
-  // ============================================================
-  // RENDER: HEADER + DRAWER
-  // ============================================================
+  // ============ RENDER FUNCTIONS ============
   function renderHeader(data) {
+    if (!data.org || !data.header) return;
+
     setText('topbar-text', data.org.topbar);
     setText('brand-name', data.org.name);
     setText('brand-subtitle', data.org.subtitle);
@@ -57,78 +57,62 @@
     setAttr('header-cta', 'href', data.header.ctaLink);
     setText('header-cta', data.header.ctaText);
 
-    // Desktop nav
-    const navList = document.getElementById('nav-list');
-    if (navList && data.header.navItems) {
-      navList.innerHTML = '';
-      data.header.navItems.forEach(item => {
-        const li = el('li');
-        const a = el('a', '', escapeHtml(item.label));
-        a.href = item.link;
-        a.dataset.section = item.id;
-        li.appendChild(a);
-        navList.appendChild(li);
-      });
-    }
+    const buildNav = (containerId) => {
+      const container = document.getElementById(containerId);
+      if (!container || !Array.isArray(data.header.navItems)) return;
+      container.replaceChildren();
 
-    // Mobile drawer nav
-    const drawerList = document.getElementById('drawer-list');
-    if (drawerList && data.header.navItems) {
-      drawerList.innerHTML = '';
       data.header.navItems.forEach(item => {
-        const li = el('li');
-        const a = el('a', '', escapeHtml(item.label));
-        a.href = item.link;
-        a.dataset.section = item.id;
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.textContent = item.label || '';
+        a.href = item.link || '#';
+        a.dataset.section = item.id || '';
         li.appendChild(a);
-        drawerList.appendChild(li);
+        container.appendChild(li);
       });
-    }
+    };
+
+    buildNav('nav-list');
+    buildNav('drawer-list');
 
     setText('drawer-org-name', data.org.name);
     setText('drawer-cta', data.header.ctaText);
     setAttr('drawer-cta', 'href', data.header.ctaLink);
 
-    document.title = data.org.name + ' — वाराणसी';
+    document.title = (data.org.name || 'Karni Sena') + ' — वाराणसी';
   }
 
-  // ============================================================
-  // RENDER: HERO SLIDER
-  // ============================================================
   function renderHero(data) {
     const slider = document.getElementById('hero-slider');
     const dotsEl = document.getElementById('hero-dots');
-    if (!slider || !dotsEl) return;
+    if (!slider || !dotsEl || !data.hero) return;
 
     const slides = data.hero.slides || [];
     if (slides.length === 0) return;
 
-    slider.innerHTML = '';
-    dotsEl.innerHTML = '';
+    slider.replaceChildren();
+    dotsEl.replaceChildren();
 
     slides.forEach((slide, i) => {
-      // Background slide
-      const div = el('div', 'hero-slide' + (i === 0 ? ' active' : ''));
-      div.style.backgroundImage = `url('${slide.image}')`;
+      const div = createElement('div', 'hero-slide' + (i === 0 ? ' active' : ''));
+      div.style.backgroundImage = "url('" + encodeURI(slide.image || '') + "')";
       slider.appendChild(div);
 
-      // Dot
-      const dot = el('button', 'hero-dot' + (i === 0 ? ' active' : ''));
+      const dot = createElement('button', 'hero-dot' + (i === 0 ? ' active' : ''));
       dot.setAttribute('aria-label', 'Slide ' + (i + 1));
+      dot.type = 'button';
       dot.addEventListener('click', () => goToSlide(i));
       dotsEl.appendChild(dot);
     });
 
-    // Update text for first slide
     updateHeroText(slides[0]);
 
-    // Buttons
     setText('hero-primary', data.hero.primaryButton);
     setAttr('hero-primary', 'href', data.hero.primaryLink);
     setText('hero-secondary', data.hero.secondaryButton);
     setAttr('hero-secondary', 'href', data.hero.secondaryLink);
 
-    // Auto-rotate
     let current = 0;
     let timer = null;
 
@@ -145,78 +129,88 @@
       goToSlide((current + 1) % slides.length);
     }
 
-    function start() { stop(); timer = setInterval(next, 6000); }
-    function stop() { if (timer) clearInterval(timer); timer = null; }
+    function start() {
+      stop();
+      timer = setInterval(next, 6000);
+    }
+
+    function stop() {
+      if (timer) clearInterval(timer);
+      timer = null;
+    }
 
     start();
-
-    // Pause on hover (desktop)
     slider.addEventListener('mouseenter', stop);
     slider.addEventListener('mouseleave', start);
   }
 
   function updateHeroText(slide) {
+    if (!slide) return;
     const t = document.getElementById('hero-title');
     const s = document.getElementById('hero-subtitle');
     const d = document.getElementById('hero-desc');
-    if (t) { t.textContent = slide.title; t.style.animation = 'none'; void t.offsetWidth; t.style.animation = ''; }
-    if (s) { s.textContent = slide.subtitle; }
-    if (d) { d.textContent = slide.description; }
+
+    if (t) {
+      t.textContent = slide.title || '';
+      t.style.animation = 'none';
+      void t.offsetWidth;
+      t.style.animation = '';
+    }
+    if (s) s.textContent = slide.subtitle || '';
+    if (d) d.textContent = slide.description || '';
   }
 
-  // ============================================================
-  // RENDER: ABOUT
-  // ============================================================
   function renderAbout(data) {
+    if (!data.about) return;
     setText('about-title', data.about.title);
     setText('about-subtitle', data.about.subtitle);
     setText('about-desc', data.about.description);
 
     const paraWrap = document.getElementById('about-paragraphs');
-    if (paraWrap && data.about.paragraphs) {
-      paraWrap.innerHTML = '';
+    if (paraWrap && Array.isArray(data.about.paragraphs)) {
+      paraWrap.replaceChildren();
       data.about.paragraphs.forEach(p => {
-        paraWrap.appendChild(el('p', '', escapeHtml(p)));
+        paraWrap.appendChild(createElement('p', '', p));
       });
     }
 
     const statsWrap = document.getElementById('about-stats');
-    if (statsWrap && data.about.stats) {
-      statsWrap.innerHTML = '';
+    if (statsWrap && Array.isArray(data.about.stats)) {
+      statsWrap.replaceChildren();
       data.about.stats.forEach(s => {
-        const stat = el('div', 'about-stat');
-        stat.innerHTML =
-          `<div class="about-stat-value">${escapeHtml(s.value)}</div>` +
-          `<div class="about-stat-label">${escapeHtml(s.label)}</div>`;
+        const stat = createElement('div', 'about-stat');
+        const valDiv = createElement('div', 'about-stat-value', s.value);
+        const lblDiv = createElement('div', 'about-stat-label', s.label);
+        stat.appendChild(valDiv);
+        stat.appendChild(lblDiv);
         statsWrap.appendChild(stat);
       });
     }
   }
 
-  // ============================================================
-  // RENDER: AGENDA
-  // ============================================================
   function renderAgenda(data) {
+    if (!data.agenda) return;
     setText('agenda-title', data.agenda.title);
     setText('agenda-subtitle', data.agenda.subtitle);
     setText('agenda-desc', data.agenda.description);
 
     const grid = document.getElementById('agenda-grid');
     if (!grid) return;
-    grid.innerHTML = '';
+    grid.replaceChildren();
+
     (data.agenda.items || []).forEach(item => {
-      const card = el('div', 'agenda-card');
-      card.innerHTML =
-        `<div class="agenda-icon">${escapeHtml(item.icon || '•')}</div>` +
-        `<h3>${escapeHtml(item.title)}</h3>` +
-        `<p>${escapeHtml(item.text)}</p>`;
+      const card = createElement('div', 'agenda-card');
+      const icon = createElement('div', 'agenda-icon', item.icon || '•');
+      const h3 = createElement('h3', '', item.title);
+      const p = createElement('p', '', item.text);
+
+      card.appendChild(icon);
+      card.appendChild(h3);
+      card.appendChild(p);
       grid.appendChild(card);
     });
   }
 
-  // ============================================================
-  // RENDER: HEAD OF REGION
-  // ============================================================
   function renderHeadOfRegion(data) {
     const h = data.headOfRegion;
     if (!h) return;
@@ -225,153 +219,181 @@
 
     const card = document.getElementById('head-card');
     if (!card) return;
+    card.replaceChildren();
 
-    card.innerHTML =
-      '<div class="head-photo-wrap">' +
-        `<img class="head-photo" src="${escapeHtml(h.photo)}" alt="${escapeHtml(h.name)}" ` +
-          'onerror="this.style.display=\'none\'; this.parentElement.innerHTML=\'<div style=\\\'color:rgba(255,255,255,0.4);font-size:4rem;display:flex;align-items:center;justify-content:center;height:100%;\\\'>👤</div>\';">' +
-      '</div>' +
-      '<div class="head-info">' +
-        `<div class="head-name">${escapeHtml(h.name)}</div>` +
-        `<div class="head-role">${escapeHtml(h.role)}</div>` +
-        `<p class="head-message">"${escapeHtml(h.message)}"</p>` +
-        (h.phone ? `<a class="head-phone" href="tel:${escapeHtml(h.phone)}">📞 ${escapeHtml(h.phone)}</a>` : '') +
-      '</div>';
+    const photoWrap = createElement('div', 'head-photo-wrap');
+    const img = document.createElement('img');
+    img.className = 'head-photo';
+    img.src = h.photo || '';
+    img.alt = h.name || 'Leader Photo';
+    img.onerror = function () {
+      this.style.display = 'none';
+      const fallback = createElement('div', '', '👤');
+      fallback.style.cssText = 'color:rgba(255,255,255,0.4);font-size:4rem;display:flex;align-items:center;justify-content:center;height:100%;';
+      photoWrap.appendChild(fallback);
+    };
+    photoWrap.appendChild(img);
+
+    const info = createElement('div', 'head-info');
+    info.appendChild(createElement('div', 'head-name', h.name));
+    info.appendChild(createElement('div', 'head-role', h.role));
+    info.appendChild(createElement('p', 'head-message', '"' + (h.message || '') + '"'));
+
+    if (h.phone) {
+      const phoneLink = createElement('a', 'head-phone', '📞 ' + h.phone);
+      phoneLink.href = 'tel:' + encodeURIComponent(h.phone);
+      info.appendChild(phoneLink);
+    }
+
+    card.appendChild(photoWrap);
+    card.appendChild(info);
   }
 
-  // ============================================================
-  // RENDER: TEAM
-  // ============================================================
   function renderTeam(data) {
+    if (!data.team) return;
     setText('team-title', data.team.title);
     setText('team-subtitle', data.team.subtitle);
     setText('team-desc', data.team.description);
 
     const grid = document.getElementById('team-grid');
     if (!grid) return;
-    grid.innerHTML = '';
+    grid.replaceChildren();
 
     (data.team.members || []).forEach(m => {
-      const card = el('div', 'team-card');
-      card.innerHTML =
-        `<img class="team-photo" src="${escapeHtml(m.photo)}" alt="${escapeHtml(m.name)}" ` +
-          'onerror="this.style.background=\'#F5E9D0\'; this.src=\'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text x=%2250%22 y=%2255%22 font-size=%2240%22 text-anchor=%22middle%22 fill=%22%23C6600F%22>👤</text></svg>\';">' +
-        '<div class="team-info">' +
-          `<h3>${escapeHtml(m.name)}</h3>` +
-          `<div class="team-role">${escapeHtml(m.role)}</div>` +
-          `<p class="team-bio">${escapeHtml(m.bio)}</p>` +
-          (m.phone ? `<a class="team-phone" href="tel:${escapeHtml(m.phone)}">📞 ${escapeHtml(m.phone)}</a>` : '') +
-        '</div>';
+      const card = createElement('div', 'team-card');
+      const img = document.createElement('img');
+      img.className = 'team-photo';
+      img.src = m.photo || '';
+      img.alt = m.name || '';
+      img.onerror = function () {
+        this.style.background = '#F5E9D0';
+        this.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text x="50" y="55" font-size="40" text-anchor="middle" fill="%23C6600F">👤</text></svg>';
+      };
+
+      const info = createElement('div', 'team-info');
+      info.appendChild(createElement('h3', '', m.name));
+      info.appendChild(createElement('div', 'team-role', m.role));
+      info.appendChild(createElement('p', 'team-bio', m.bio));
+
+      if (m.phone) {
+        const phoneLink = createElement('a', 'team-phone', '📞 ' + m.phone);
+        phoneLink.href = 'tel:' + encodeURIComponent(m.phone);
+        info.appendChild(phoneLink);
+      }
+
+      card.appendChild(img);
+      card.appendChild(info);
       grid.appendChild(card);
     });
   }
 
-  // ============================================================
-  // RENDER: ACTIVITY
-  // ============================================================
   function renderActivity(data) {
+    if (!data.activity) return;
     setText('activity-title', data.activity.title);
     setText('activity-subtitle', data.activity.subtitle);
     setText('activity-desc', data.activity.description);
 
     const list = document.getElementById('activity-list');
     if (!list) return;
-    list.innerHTML = '';
+    list.replaceChildren();
+
     (data.activity.items || []).forEach(item => {
-      const div = el('div', 'timeline-item');
-      div.innerHTML =
-        `<span class="timeline-date">${escapeHtml(item.date)}</span>` +
-        `<h3 class="timeline-title">${escapeHtml(item.title)}</h3>` +
-        `<p class="timeline-text">${escapeHtml(item.text)}</p>`;
+      const div = createElement('div', 'timeline-item');
+      div.appendChild(createElement('span', 'timeline-date', item.date));
+      div.appendChild(createElement('h3', 'timeline-title', item.title));
+      div.appendChild(createElement('p', 'timeline-text', item.text));
       list.appendChild(div);
     });
   }
 
-  // ============================================================
-  // RENDER: NEWS
-  // ============================================================
   function renderNews(data) {
+    if (!data.news) return;
     setText('news-title', data.news.title);
     setText('news-subtitle', data.news.subtitle);
     setText('news-desc', data.news.description);
 
     const list = document.getElementById('news-list');
     if (!list) return;
-    list.innerHTML = '';
+    list.replaceChildren();
+
     (data.news.items || []).forEach(item => {
-      const card = el('div', 'news-card');
-      card.innerHTML =
-        `<div class="news-date">${escapeHtml(item.date)}</div>` +
-        `<h3 class="news-title">${escapeHtml(item.title)}</h3>` +
-        `<p class="news-text">${escapeHtml(item.text)}</p>`;
+      const card = createElement('div', 'news-card');
+      card.appendChild(createElement('div', 'news-date', item.date));
+      card.appendChild(createElement('h3', 'news-title', item.title));
+      card.appendChild(createElement('p', 'news-text', item.text));
       list.appendChild(card);
     });
   }
 
-  // ============================================================
-  // RENDER: GALLERY
-  // ============================================================
   function renderGallery(data) {
+    if (!data.gallery) return;
     setText('gallery-title', data.gallery.title);
     setText('gallery-subtitle', data.gallery.subtitle);
     setText('gallery-desc', data.gallery.description);
 
     const grid = document.getElementById('gallery-grid');
     if (!grid) return;
-    grid.innerHTML = '';
+    grid.replaceChildren();
 
     const images = data.gallery.images || [];
     if (images.length === 0) {
-      grid.innerHTML =
-        '<div class="gallery-empty">' +
-          '<div class="gallery-empty-icon">📷</div>' +
-          '<p>अभी कोई फ़ोटो उपलब्ध नहीं है।</p>' +
-        '</div>';
+      const empty = createElement('div', 'gallery-empty');
+      empty.appendChild(createElement('div', 'gallery-empty-icon', '📷'));
+      empty.appendChild(createElement('p', '', 'अभी कोई फ़ोटो उपलब्ध नहीं है।'));
+      grid.appendChild(empty);
       return;
     }
 
-    images.forEach(img => {
-      const item = el('div', 'gallery-item');
-      item.innerHTML =
-        `<img src="${escapeHtml(img.src)}" alt="${escapeHtml(img.caption || '')}" loading="lazy" ` +
-          'onerror="this.style.display=\'none\'; this.parentElement.style.display=\'none\';">' +
-        (img.caption ? `<div class="gallery-caption">${escapeHtml(img.caption)}</div>` : '');
+    images.forEach(imgData => {
+      const item = createElement('div', 'gallery-item');
+      const img = document.createElement('img');
+      img.src = imgData.src || '';
+      img.alt = imgData.caption || '';
+      img.loading = 'lazy';
+      img.onerror = function () {
+        item.style.display = 'none';
+      };
+
+      item.appendChild(img);
+      if (imgData.caption) {
+        item.appendChild(createElement('div', 'gallery-caption', imgData.caption));
+      }
       grid.appendChild(item);
     });
   }
 
-  // ============================================================
-  // RENDER: OFFICE
-  // ============================================================
   function renderOffice(data) {
+    if (!data.office) return;
     setText('office-title', data.office.title);
     setText('office-subtitle', data.office.subtitle);
 
     const card = document.getElementById('office-card');
     if (!card) return;
+    card.replaceChildren();
 
-    let phonesHtml = '';
+    card.appendChild(createElement('div', 'office-icon-wrap', '🏛️'));
+
+    const info = createElement('div', 'office-info');
+    info.appendChild(createElement('h3', '', data.office.name));
+    info.appendChild(createElement('p', '', data.office.addressLine1));
+    info.appendChild(createElement('p', '', data.office.addressLine2));
+    info.appendChild(createElement('div', 'office-hours', '🕒 ' + (data.office.hours || '')));
+
+    const phonesDiv = createElement('div', 'office-phones');
     (data.office.phones || []).forEach(p => {
-      phonesHtml += `<a class="office-phone-link" href="tel:${escapeHtml(p)}">📞 ${escapeHtml(p)}</a>`;
+      const a = createElement('a', 'office-phone-link', '📞 ' + p);
+      a.href = 'tel:' + encodeURIComponent(p);
+      phonesDiv.appendChild(a);
     });
+    info.appendChild(phonesDiv);
 
-    card.innerHTML =
-      '<div class="office-icon-wrap">🏛️</div>' +
-      '<div class="office-info">' +
-        `<h3>${escapeHtml(data.office.name)}</h3>` +
-        `<p>${escapeHtml(data.office.addressLine1)}</p>` +
-        `<p>${escapeHtml(data.office.addressLine2)}</p>` +
-        `<div class="office-hours">🕒 ${escapeHtml(data.office.hours)}</div>` +
-        `<div class="office-phones">${phonesHtml}</div>` +
-        `<p class="office-note">${escapeHtml(data.office.note)}</p>` +
-      '</div>';
+    info.appendChild(createElement('p', 'office-note', data.office.note));
+    card.appendChild(info);
   }
 
-  // ============================================================
-  // RENDER: JOIN FORM header
-  // ============================================================
   function renderJoinForm(data) {
     const f = data.joinForm;
+    if (!f) return;
     setText('join-title', f.title);
     setText('join-subtitle', f.subtitle);
     setText('join-desc', f.description);
@@ -384,99 +406,92 @@
     setText('reset-btn', f.resetText);
 
     const list = document.getElementById('form-card-list');
-    if (list) {
-      list.innerHTML = '';
-      (f.cardList || []).forEach(item => {
-        const li = el('li', '', escapeHtml(item));
-        list.appendChild(li);
+    if (list && Array.isArray(f.cardList)) {
+      list.replaceChildren();
+      f.cardList.forEach(item => {
+        list.appendChild(createElement('li', '', item));
       });
     }
 
     const phonesWrap = document.getElementById('form-help-phones');
-    if (phonesWrap) {
-      phonesWrap.innerHTML = '';
-      (f.helpPhones || []).forEach(p => {
-        const a = el('a', '', escapeHtml(p));
-        a.href = 'tel:' + p;
+    if (phonesWrap && Array.isArray(f.helpPhones)) {
+      phonesWrap.replaceChildren();
+      f.helpPhones.forEach(p => {
+        const a = createElement('a', '', p);
+        a.href = 'tel:' + encodeURIComponent(p);
         phonesWrap.appendChild(a);
-        phonesWrap.appendChild(el('br'));
+        phonesWrap.appendChild(document.createElement('br'));
       });
     }
   }
 
-  // ============================================================
-  // RENDER: CONTACT
-  // ============================================================
   function renderContact(data) {
+    if (!data.contact) return;
     setText('contact-title', data.contact.title);
     setText('contact-subtitle', data.contact.subtitle);
     setText('contact-desc', data.contact.description);
 
     const grid = document.getElementById('contact-grid');
     if (!grid) return;
-    grid.innerHTML = '';
+    grid.replaceChildren();
 
-    // Phone cards
     (data.contact.phones || []).forEach(phone => {
-      const card = el('div', 'contact-card');
-      card.innerHTML =
-        '<div class="contact-icon">📞</div>' +
-        '<h4>फ़ोन</h4>' +
-        `<a href="tel:${escapeHtml(phone)}">${escapeHtml(phone)}</a>`;
+      const card = createElement('div', 'contact-card');
+      card.appendChild(createElement('div', 'contact-icon', '📞'));
+      card.appendChild(createElement('h4', '', 'फ़ोन'));
+      const a = createElement('a', '', phone);
+      a.href = 'tel:' + encodeURIComponent(phone);
+      card.appendChild(a);
       grid.appendChild(card);
     });
 
-    // Address
     if (data.contact.address) {
-      const card = el('div', 'contact-card');
-      card.innerHTML =
-        '<div class="contact-icon">📍</div>' +
-        '<h4>पता</h4>' +
-        `<p>${escapeHtml(data.contact.address)}</p>`;
+      const card = createElement('div', 'contact-card');
+      card.appendChild(createElement('div', 'contact-icon', '📍'));
+      card.appendChild(createElement('h4', '', 'पता'));
+      card.appendChild(createElement('p', '', data.contact.address));
       grid.appendChild(card);
     }
 
-    // Email if present
     if (data.contact.email) {
-      const card = el('div', 'contact-card');
-      card.innerHTML =
-        '<div class="contact-icon">✉️</div>' +
-        '<h4>ईमेल</h4>' +
-        `<a href="mailto:${escapeHtml(data.contact.email)}">${escapeHtml(data.contact.email)}</a>`;
+      const card = createElement('div', 'contact-card');
+      card.appendChild(createElement('div', 'contact-icon', '✉️'));
+      card.appendChild(createElement('h4', '', 'ईमेल'));
+      const a = createElement('a', '', data.contact.email);
+      a.href = 'mailto:' + encodeURIComponent(data.contact.email);
+      card.appendChild(a);
       grid.appendChild(card);
     }
   }
 
-  // ============================================================
-  // RENDER: FOOTER
-  // ============================================================
   function renderFooter(data) {
-    setText('footer-name', data.org.name + ' — वाराणसी');
+    if (!data.org || !data.footer) return;
+    setText('footer-name', (data.org.name || '') + ' — वाराणसी');
     setText('footer-tagline', data.footer.tagline);
     setText('footer-copy', data.footer.copyright);
 
     const linksList = document.getElementById('footer-quick-links');
-    if (linksList && data.footer.quickLinks) {
-      linksList.innerHTML = '';
+    if (linksList && Array.isArray(data.footer.quickLinks)) {
+      linksList.replaceChildren();
       data.footer.quickLinks.forEach(l => {
-        const li = el('li');
-        const a = el('a', '', escapeHtml(l.label));
-        a.href = l.link;
+        const li = document.createElement('li');
+        const a = createElement('a', '', l.label);
+        a.href = l.link || '#';
         li.appendChild(a);
         linksList.appendChild(li);
       });
     }
 
     const contactDiv = document.getElementById('footer-contact');
-    if (contactDiv) {
-      contactDiv.innerHTML = '';
+    if (contactDiv && data.contact) {
+      contactDiv.replaceChildren();
       (data.contact.phones || []).forEach(p => {
-        const a = el('a', '', '📞 ' + escapeHtml(p));
-        a.href = 'tel:' + p;
+        const a = createElement('a', '', '📞 ' + p);
+        a.href = 'tel:' + encodeURIComponent(p);
         contactDiv.appendChild(a);
       });
       if (data.contact.address) {
-        const p = el('p', '', '📍 ' + escapeHtml(data.contact.address));
+        const p = createElement('p', '', '📍 ' + data.contact.address);
         p.style.fontFamily = 'var(--font-hi)';
         p.style.fontSize = '0.88rem';
         p.style.opacity = '0.85';
@@ -486,9 +501,7 @@
     }
   }
 
-  // ============================================================
-  // MOBILE DRAWER
-  // ============================================================
+  // ============ CONTROLLERS ============
   function setupDrawer() {
     const drawer = document.getElementById('mobile-drawer');
     const overlay = document.getElementById('drawer-overlay');
@@ -513,20 +526,15 @@
     if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
     overlay.addEventListener('click', closeDrawer);
 
-    // Close when a link is clicked
     $$('#drawer-list a').forEach(a => a.addEventListener('click', closeDrawer));
     const drawerCta = document.getElementById('drawer-cta');
     if (drawerCta) drawerCta.addEventListener('click', closeDrawer);
 
-    // ESC closes
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') closeDrawer();
     });
   }
 
-  // ============================================================
-  // ACTIVE NAV HIGHLIGHT
-  // ============================================================
   function setupScrollSpy() {
     const sections = $$('main section[id]');
     const navLinks = $$('.main-nav a, .drawer-nav a');
@@ -546,9 +554,7 @@
     sections.forEach(s => observer.observe(s));
   }
 
-  // ============================================================
-  // FORM VALIDATION
-  // ============================================================
+  // ============ FORM HANDLING ============
   const form = document.getElementById('joining-form');
   const statusEl = document.getElementById('form-status');
 
@@ -557,7 +563,7 @@
     if (!field) return;
     const wrap = field.closest('.field');
     if (wrap) wrap.classList.add('has-error');
-    const errEl = document.querySelector(`.error[data-for="${fieldId}"]`);
+    const errEl = document.querySelector('.error[data-for="' + fieldId + '"]');
     if (errEl) errEl.textContent = message;
   }
 
@@ -566,7 +572,7 @@
     if (!field) return;
     const wrap = field.closest('.field');
     if (wrap) wrap.classList.remove('has-error');
-    const errEl = document.querySelector(`.error[data-for="${fieldId}"]`);
+    const errEl = document.querySelector('.error[data-for="' + fieldId + '"]');
     if (errEl) errEl.textContent = '';
   }
 
@@ -589,44 +595,63 @@
 
     required.forEach(({ id, msg }) => {
       const e = document.getElementById(id);
-      if (!e || !e.value.trim()) { showError(id, msg); ok = false; }
+      if (!e || !sanitizeInput(e.value)) {
+        showError(id, msg);
+        ok = false;
+      }
     });
 
     const mobile = document.getElementById('mobile');
     if (mobile) {
-      const v = mobile.value.trim();
-      if (!v) { showError('mobile', 'कृपया मोबाइल नंबर भरें।'); ok = false; }
-      else if (!/^[6-9]\d{9}$/.test(v)) { showError('mobile', 'कृपया 10 अंकों का वैध मोबाइल नंबर भरें।'); ok = false; }
+      const v = sanitizeInput(mobile.value);
+      if (!v) {
+        showError('mobile', 'कृपया मोबाइल नंबर भरें।');
+        ok = false;
+      } else if (!/^[6-9]\d{9}$/.test(v)) {
+        showError('mobile', 'कृपया 10 अंकों का वैध मोबाइल नंबर भरें।');
+        ok = false;
+      }
     }
 
     const aadhaar = document.getElementById('aadhaar');
     if (aadhaar) {
-      const v = aadhaar.value.trim();
-      if (!v) { showError('aadhaar', 'कृपया आधार नंबर भरें।'); ok = false; }
-      else if (!/^\d{12}$/.test(v)) { showError('aadhaar', 'कृपया 12 अंकों का वैध आधार नंबर भरें।'); ok = false; }
+      const v = sanitizeInput(aadhaar.value).replace(/\s+/g, '');
+      if (!v) {
+        showError('aadhaar', 'कृपया आधार नंबर भरें।');
+        ok = false;
+      } else if (!/^\d{12}$/.test(v)) {
+        showError('aadhaar', 'कृपया 12 अंकों का वैध आधार नंबर भरें।');
+        ok = false;
+      }
     }
 
     const photo = document.getElementById('photo');
     if (photo) {
       if (!photo.files || !photo.files.length) {
-        showError('photo', 'कृपया उम्मीदवार की फोटो अपलोड करें।'); ok = false;
+        showError('photo', 'कृपया उम्मीदवार की फोटो अपलोड करें।');
+        ok = false;
       } else {
         const file = photo.files[0];
         const allowed = ['image/jpeg', 'image/png', 'image/webp'];
-        if (!allowed.includes(file.type)) { showError('photo', 'केवल JPG, PNG या WebP फाइल स्वीकार्य है।'); ok = false; }
-        else if (file.size > 5 * 1024 * 1024) { showError('photo', 'फोटो का आकार 5MB से कम होना चाहिए।'); ok = false; }
+        if (!allowed.includes(file.type)) {
+          showError('photo', 'केवल JPG, PNG या WebP फाइल स्वीकार्य है।');
+          ok = false;
+        } else if (file.size > 5 * 1024 * 1024) {
+          showError('photo', 'फोटो का आकार 5MB से कम होना चाहिए।');
+          ok = false;
+        }
       }
     }
 
     const consent = document.getElementById('consent');
-    if (consent && !consent.checked) { showError('consent', 'कृपया सहमति जाँचें।'); ok = false; }
+    if (consent && !consent.checked) {
+      showError('consent', 'कृपया सहमति जाँचें।');
+      ok = false;
+    }
 
     return ok;
   }
 
-  // ============================================================
-  // PHOTO PREVIEW
-  // ============================================================
   function setupPhotoPreview() {
     const input = document.getElementById('photo');
     const preview = document.getElementById('photo-preview');
@@ -636,23 +661,40 @@
     input.addEventListener('change', () => {
       clearError('photo');
       const file = input.files && input.files[0];
-      preview.innerHTML = '';
-      if (!file) { preview.style.display = 'none'; return; }
+      preview.replaceChildren();
+      if (!file) {
+        preview.style.display = 'none';
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = (e) => {
-        preview.innerHTML = `<img src="${e.target.result}" alt="preview">`;
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.alt = 'preview';
+        preview.appendChild(img);
         preview.style.display = 'block';
       };
       reader.readAsDataURL(file);
     });
 
     ['dragenter', 'dragover'].forEach(evt => {
-      drop.addEventListener(evt, e => { e.preventDefault(); drop.classList.add('dragover'); });
+      drop.addEventListener(evt, e => {
+        e.preventDefault();
+        drop.classList.add('dragover');
+      });
     });
+
     ['dragleave', 'drop'].forEach(evt => {
-      drop.addEventListener(evt, e => { e.preventDefault(); drop.classList.remove('dragover'); });
+      drop.addEventListener(evt, e => {
+        e.preventDefault();
+        drop.classList.remove('dragover');
+      });
     });
+
     drop.addEventListener('drop', e => {
+      e.preventDefault();
+      drop.classList.remove('dragover');
       if (e.dataTransfer.files && e.dataTransfer.files[0]) {
         input.files = e.dataTransfer.files;
         input.dispatchEvent(new Event('change'));
@@ -660,9 +702,17 @@
     });
   }
 
-  // ============================================================
-  // FORM SUBMIT
-  // ============================================================
+  // ============ TURNSTILE CALLBACKS ============
+  window.onTurnstileSuccess = function (token) {
+    const tokenEl = document.getElementById('turnstile_token');
+    if (tokenEl) tokenEl.value = token;
+  };
+
+  window.onTurnstileExpired = function () {
+    const tokenEl = document.getElementById('turnstile_token');
+    if (tokenEl) tokenEl.value = '';
+  };
+
   function setupFormSubmit(content) {
     if (!form) return;
     const endpoint = (content && content.formEndpoint) ? content.formEndpoint : '';
@@ -682,6 +732,13 @@
         return;
       }
 
+      const turnstileTokenEl = document.getElementById('turnstile_token');
+      const turnstileToken = turnstileTokenEl ? turnstileTokenEl.value : '';
+      if (!turnstileToken) {
+        showStatus('कृपया सुरक्षा जाँच पूरी होने की प्रतीक्षा करें।', 'error-msg');
+        return;
+      }
+
       const submitBtn = document.getElementById('submit-btn');
       const originalText = submitBtn.textContent;
       submitBtn.disabled = true;
@@ -695,39 +752,61 @@
         if (photoFile && window.KSImageCompressor) {
           try {
             photoFile = await window.KSImageCompressor.compressImage(photoFile, {
-              maxWidth: 1600, maxHeight: 1600, quality: 0.82,
+              maxWidth: 1600,
+              maxHeight: 1600,
+              quality: 0.82,
             });
-          } catch (ce) { console.warn('Compression failed:', ce); }
+          } catch (ce) {
+            console.warn('Compression failed:', ce);
+          }
         }
 
         const fd = new FormData();
-        fd.append('candidate_name', document.getElementById('candidate_name').value.trim());
-        fd.append('father_name',    document.getElementById('father_name').value.trim());
-        fd.append('address',        document.getElementById('address').value.trim());
-        fd.append('district',       document.getElementById('district').value.trim());
-        fd.append('state',          document.getElementById('state').value.trim());
-        fd.append('mobile',         document.getElementById('mobile').value.trim());
-        fd.append('aadhaar',        document.getElementById('aadhaar').value.trim());
-        fd.append('additional',     (document.getElementById('additional').value || '').trim());
-        if (photoFile) fd.append('photo', photoFile, photoFile.name || 'photo.jpg');
+        fd.append('turnstile_token', turnstileToken);
+        fd.append('candidate_name', sanitizeInput(document.getElementById('candidate_name').value));
+        fd.append('father_name', sanitizeInput(document.getElementById('father_name').value));
+        fd.append('address', sanitizeInput(document.getElementById('address').value));
+        fd.append('district', sanitizeInput(document.getElementById('district').value));
+        fd.append('state', sanitizeInput(document.getElementById('state').value));
+        fd.append('mobile', sanitizeInput(document.getElementById('mobile').value));
+        fd.append('aadhaar', sanitizeInput(document.getElementById('aadhaar').value).replace(/\s+/g, ''));
 
-        const response = await fetch(endpoint, { method: 'POST', body: fd });
+        const additionalEl = document.getElementById('additional');
+        fd.append('additional', sanitizeInput(additionalEl ? additionalEl.value : ''));
+
+        if (photoFile) {
+          fd.append('photo', photoFile, photoFile.name || 'photo.jpg');
+        }
+
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          body: fd,
+          headers: { 'Accept': 'application/json' },
+        });
+
         const result = await response.json().catch(() => ({}));
 
-        if (!response.ok || !result.success) throw new Error(result.error || 'Server error');
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Server error');
+        }
 
         showStatus('आपका आवेदन सफलतापूर्वक जमा हो गया है।', 'success');
         form.reset();
+
+        if (turnstileTokenEl) turnstileTokenEl.value = '';
         const preview = document.getElementById('photo-preview');
-        if (preview) preview.innerHTML = '';
+        if (preview) {
+          preview.replaceChildren();
+          preview.style.display = 'none';
+        }
 
         setTimeout(() => {
-          window.location.href = '/thank-you.html?id=' + (result.submissionId || '');
+          window.location.href = '/thank-you.html?id=' + encodeURIComponent(result.submissionId || '');
         }, 1200);
 
       } catch (err) {
         console.error('[submit]', err);
-        showStatus('क्षमा करें, आवेदन जमा नहीं हो सका। कृपया दोबारा प्रयास करें। (' + (err.message || 'error') + ')', 'error-msg');
+        showStatus('क्षमा करें, आवेदन जमा नहीं हो सका। कृपया दोबारा प्रयास करें।', 'error-msg');
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = originalText;
@@ -745,7 +824,10 @@
         clearAllErrors();
         showStatus('', '');
         const preview = document.getElementById('photo-preview');
-        if (preview) preview.innerHTML = '';
+        if (preview) {
+          preview.replaceChildren();
+          preview.style.display = 'none';
+        }
       });
     }
   }
@@ -756,9 +838,7 @@
     statusEl.className = 'form-status' + (message ? ' show ' + (type || '') : '');
   }
 
-  // ============================================================
-  // INIT
-  // ============================================================
+  // ============ INITIALIZATION ============
   document.addEventListener('DOMContentLoaded', async () => {
     const content = await loadContent();
     if (!content) {
