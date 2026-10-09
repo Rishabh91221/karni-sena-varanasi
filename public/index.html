@@ -24,7 +24,7 @@
     <meta name="twitter:title" content="क्षत्रिय करणी सेना — वाराणसी">
     <meta name="twitter:description" content="एकजुटता, अनुशासन, सेवा और सामाजिक सहभागिता की भावना के साथ वाराणसी जिला टीम से जुड़ें।">
     <meta name="twitter:image" content="https://karni-sena-varanasi.pages.dev/assets/logo.png">
-
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <!-- Canonical -->
     <link rel="canonical" href="https://karni-sena-varanasi.pages.dev/">
     
@@ -311,7 +311,14 @@
                         </label>
                         <small class="error" data-for="consent"></small>
                     </div>
-
+<div class="cf-turnstile" 
+     data-sitekey="0x4AAAAAAFSGwcAymwcD1CYA"
+     data-theme="light"
+     data-size="normal"
+     data-callback="onTurnstileSuccess"
+     data-expired-callback="onTurnstileExpired">
+</div>
+<input type="hidden" id="turnstile_token" name="turnstile_token" value="">
                     <div class="form-actions">
                         <button type="submit" class="btn btn-primary btn-submit" id="submit-btn">आवेदन जमा करें</button>
                         <button type="reset" class="btn btn-outline" id="reset-btn">फ़ॉर्म साफ़ करें</button>
