@@ -1,10 +1,6 @@
 /* ============================================================
    KARNI SENA VARANASI — Admin Dashboard
-   ------------------------------------------------------------
    Authentication: X-Admin-Username + X-Admin-Password
-   Endpoints: /admin/stats, /admin/list, /admin/photo,
-              /admin/delete
-   Storage: sessionStorage (clears on browser close)
    ============================================================ */
 
 (function () {
@@ -14,8 +10,8 @@
   const API_BASE = 'https://karni-sena-backend.smritiiasacademy.workers.dev/admin';
   const STORAGE_KEY = 'ks_admin_auth';
 
-  // ============ APPLICATION STATE ============
-  let auth = null;              // { username, password } or null
+  // ============ STATE ============
+  let auth = null;
   let submissions = [];
   let filters = { q: '', from: '', to: '' };
   let searchDebounce = null;
@@ -54,7 +50,7 @@
     return 'XXXX-XXXX-' + str.slice(-4);
   }
 
-  // ============ AUTH STORAGE (sessionStorage) ============
+  // ============ AUTH STORAGE ============
   function loadAuth() {
     try {
       const raw = sessionStorage.getItem(STORAGE_KEY);
@@ -73,7 +69,7 @@
     try {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(a));
     } catch (e) {
-      console.warn('Unable to save auth to sessionStorage:', e);
+      console.warn('Unable to save auth:', e);
     }
   }
 
@@ -81,7 +77,7 @@
     auth = null;
     try {
       sessionStorage.removeItem(STORAGE_KEY);
-    } catch (e) { /* ignore */ }
+    } catch (e) {}
   }
 
   // ============ API WRAPPER ============
@@ -130,7 +126,7 @@
     loadSubmissions();
   }
 
-  // ============ LOGIN HANDLER ============
+  // ============ LOGIN ============
   function setupLogin() {
     const form = $('#login-form');
     const errEl = $('#login-error');
@@ -168,9 +164,7 @@
           },
         });
 
-        if (!res.ok) {
-          throw new Error('Invalid credentials');
-        }
+        if (!res.ok) throw new Error('Invalid credentials');
 
         saveAuth({ username: username, password: password });
         showDashboard();
@@ -335,9 +329,7 @@
       tdActions.appendChild(wrap);
       tr.appendChild(tdActions);
 
-      // Click row (outside of action buttons) opens detail
       tr.addEventListener('click', () => openDetailModal(item));
-
       tbody.appendChild(tr);
     });
 
@@ -345,12 +337,16 @@
     if (tableEl) tableEl.style.display = 'table';
   }
 
-  // ============ PHOTO FETCHER ============
+  // ============ PHOTO FETCHER (FIXED) ============
+  // NOTE: We intentionally do NOT revoke the blob URL here.
+  // Revoking on `img.onload` was breaking image rendering for
+  // all but the first thumbnail. The browser cleans up blob URLs
+  // automatically when the page unloads.
   async function fetchPhotoInto(imgEl, key) {
     if (!key || !imgEl) return;
 
     try {
-      // Encodes slashes inside the key safely
+      // Encode each path segment individually (preserves `/`)
       const encodedKey = key.split('/').map(encodeURIComponent).join('/');
       const res = await apiFetch('/photo/' + encodedKey);
 
@@ -360,13 +356,11 @@
       }
 
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      imgEl.src = url;
+      const objectUrl = URL.createObjectURL(blob);
+      imgEl.src = objectUrl;
 
-      // Revoke after rendering to free memory
-      imgEl.onload = () => {
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-      };
+      // Do NOT revoke — see comment above.
+
     } catch (err) {
       imgEl.style.background = '#F5E9D0';
       console.warn('fetchPhotoInto error:', err);
@@ -469,7 +463,6 @@
     function sanitizeField(v) {
       if (v == null) return '';
       const s = String(v);
-      // Escape quotes, wrap if contains comma, quote or newline
       if (/[",\n\r]/.test(s)) {
         return '"' + s.replace(/"/g, '""') + '"';
       }
@@ -495,7 +488,6 @@
       ...rows.map(r => r.map(sanitizeField).join(',')),
     ];
 
-    // Add BOM so Excel reads UTF-8 (Hindi) correctly
     const csv = '\uFEFF' + lines.join('\r\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -576,13 +568,12 @@
     });
   }
 
-  // ============ INITIALIZATION ============
+  // ============ INIT ============
   document.addEventListener('DOMContentLoaded', async () => {
     loadAuth();
     setupLogin();
     setupControls();
 
-    // If session has valid-looking auth, verify it before showing dashboard
     if (auth && auth.username && auth.password) {
       try {
         const res = await fetch(API_BASE + '/stats', {
