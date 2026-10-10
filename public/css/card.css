@@ -324,7 +324,7 @@ body {
   display: grid;
   grid-template-columns: 78px 1fr 78px;
   gap: 12px;
-  align-items: center;
+  align-items: start;
   min-height: 0;
 }
 
@@ -378,7 +378,8 @@ body {
 
 .card-father {
   font-family: var(--font-hi);
-  font-size: 11px;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--cream-dark);
   opacity: 0.9;
   overflow: hidden;
@@ -433,12 +434,13 @@ body {
 
 .card-id-box strong {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 10px;
   font-weight: 700;
   color: #FFE4A0;
-  letter-spacing: 1px;
+  letter-spacing: 0.3px;
   text-shadow: 0 1px 3px rgba(0,0,0,0.6);
   line-height: 1.1;
+  white-space: nowrap;
 }
 
 .card-qr {
@@ -498,8 +500,8 @@ body {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 12px;
-  align-items: end;
-  padding-top: 6px;
+  align-items: start;
+  padding-top: 4px;
   border-top: 1px solid rgba(212,175,55,0.3);
 }
 
@@ -661,6 +663,13 @@ body {
   line-height: 1.4;
 }
 
+.back-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  align-items: start;
+}
+
 .back-qr-col {
   display: flex;
   flex-direction: column;
@@ -669,11 +678,11 @@ body {
 }
 
 .back-qr-col img {
-  width: 62px;
-  height: 62px;
+  width: 50px;
+  height: 50px;
   background: var(--cream);
-  padding: 3px;
-  border-radius: 5px;
+  padding: 2px;
+  border-radius: 4px;
   border: 1px solid rgba(212,175,55,0.5);
 }
 
@@ -836,6 +845,7 @@ body {
   .hologram { width: 28px; height: 28px; font-size: 12px; }
 
   .back-body { grid-template-columns: 1fr 68px; gap: 8px; }
+  .back-two-col { grid-template-columns: 1fr 1fr; gap: 4px; }
   .back-section li,
   .back-section p { font-size: 7px; }
   .back-section h4 { font-size: 6px; }
