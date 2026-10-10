@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>System Status — Karni Sena Varanasi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/status.css">
+    <link rel="icon" type="image/png" href="/assets/logo.png">
+</head>
+<body>
+    <main class="status-page">
+        <div class="status-container">
+
+            <header class="status-header">
+                <img src="/assets/logo.png" alt="Logo" class="status-logo">
+                <h1>System Status</h1>
+                <p class="status-subtitle">Karni Sena Varanasi — Live Monitoring</p>
+            </header>
+
+            <div class="status-summary" id="status-summary">
+                <div class="status-summary-icon" id="summary-icon">⏳</div>
+                <div class="status-summary-text">
+                    <strong id="summary-title">Checking systems...</strong>
+                    <span id="summary-subtitle">Please wait</span>
+                </div>
+            </div>
+
+            <div class="status-grid" id="status-grid">
+                <!-- Checks will be injected here by JS -->
+            </div>
+
+            <div class="status-footer">
+                <p>
+                    Last checked: <span id="last-checked">—</span>
+                </p>
+                <button id="refresh-btn" class="refresh-btn" type="button">
+                    🔄 Refresh Now
+                </button>
+                <p class="status-note">
+                    Auto-refreshes every 60 seconds
+                </p>
+            </div>
+
+            <div class="status-back">
+                <a href="/">← Back to main site</a>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="/js/status.js"></script>
+</body>
+</html>
