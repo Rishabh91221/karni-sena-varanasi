@@ -266,11 +266,10 @@ body {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: transparent;
-  padding: 0;
+  background: var(--cream);
+  padding: 2px;
   flex-shrink: 0;
   object-fit: cover;
-  box-shadow: 0 0 0 1.5px rgba(212,175,55,0.7);
 }
 
 .card-header-text { flex: 1; min-width: 0; }
@@ -320,13 +319,12 @@ body {
   margin-top: 1px;
 }
 
-/* === CHANGE #2: align-items start (photo moved up) === */
 .card-body {
   flex: 1;
   display: grid;
   grid-template-columns: 78px 1fr 78px;
   gap: 12px;
-  align-items: start;
+  align-items: center;
   min-height: 0;
 }
 
@@ -378,13 +376,11 @@ body {
   white-space: nowrap;
 }
 
-/* === CHANGE #3: father name bigger + bolder === */
 .card-father {
   font-family: var(--font-hi);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--cream);
-  opacity: 1;
+  font-size: 11px;
+  color: var(--cream-dark);
+  opacity: 0.9;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -416,15 +412,13 @@ body {
   display: inline-flex;
   flex-direction: column;
   gap: 1px;
-  padding: 5px 8px;
+  padding: 5px 10px;
   background: rgba(0,0,0,0.35);
   border: 1px solid rgba(212,175,55,0.5);
   border-radius: 5px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.3) inset;
   margin-top: 2px;
   align-self: flex-start;
-  min-width: 0;
-  max-width: 100%;
 }
 
 .card-id-box small {
@@ -437,16 +431,14 @@ body {
   line-height: 1;
 }
 
-/* === CHANGE #1: Member ID one line === */
 .card-id-box strong {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 700;
   color: #FFE4A0;
-  letter-spacing: 0.3px;
+  letter-spacing: 1px;
   text-shadow: 0 1px 3px rgba(0,0,0,0.6);
   line-height: 1.1;
-  white-space: nowrap;
 }
 
 .card-qr {
@@ -487,30 +479,27 @@ body {
   opacity: 0.85;
 }
 
-/* === CHANGE #7: watermark smaller === */
 .card-watermark {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) rotate(-8deg);
   font-family: var(--font-hi);
-  font-size: 34px;
+  font-size: 42px;
   font-weight: 700;
-  color: rgba(212,175,55,0.07);
+  color: rgba(212,175,55,0.055);
   pointer-events: none;
   white-space: nowrap;
   z-index: 0;
-  letter-spacing: 2px;
+  letter-spacing: 3px;
 }
 
-/* === CHANGE #4: footer align start + tighter === */
 .card-footer {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 12px;
-  align-items: start;
-  padding-top: 4px;
-  margin-top: 2px;
+  align-items: end;
+  padding-top: 6px;
   border-top: 1px solid rgba(212,175,55,0.3);
 }
 
@@ -568,8 +557,9 @@ body {
   box-shadow:
     0 0 12px rgba(212,175,55,0.6),
     inset 0 0 8px rgba(255,255,255,0.3);
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-family: var(--font-hi);
   font-size: 14px;
   color: rgba(255,255,255,0.9);
@@ -616,14 +606,6 @@ body {
   font-size: 7.5px;
   line-height: 1.4;
   min-height: 0;
-}
-
-/* === CHANGE #5: Address + Mission side by side === */
-.back-body > div:nth-child(2) {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  align-items: start;
 }
 
 .back-section h4 {
@@ -679,42 +661,36 @@ body {
   line-height: 1.4;
 }
 
-/* === CHANGE #6: QR aligned to top, smaller === */
 .back-qr-col {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  gap: 2px;
-  align-self: start;
-  max-height: 100%;
-  overflow: hidden;
+  gap: 4px;
 }
 
 .back-qr-col img {
-  width: 50px;
-  height: 50px;
+  width: 62px;
+  height: 62px;
   background: var(--cream);
-  padding: 2px;
-  border-radius: 4px;
+  padding: 3px;
+  border-radius: 5px;
   border: 1px solid rgba(212,175,55,0.5);
 }
 
 .back-qr-col small {
   font-family: var(--font-en);
-  font-size: 5px;
+  font-size: 5.5px;
   color: var(--gold);
   text-align: center;
   letter-spacing: 0.5px;
   text-transform: uppercase;
   font-weight: 700;
-  line-height: 1.1;
 }
 
 .back-qr-col small span {
   display: block;
   font-family: var(--font-hi);
-  font-size: 6px;
+  font-size: 6.5px;
   letter-spacing: 0;
   text-transform: none;
   color: var(--cream);
@@ -837,16 +813,16 @@ body {
   .card-header-title { font-size: 6px; }
   .card-header-title span { font-size: 7.5px; }
 
-  .card-body { grid-template-columns: 62px 1fr 62px; gap: 9px; align-items: start; }
+  .card-body { grid-template-columns: 62px 1fr 62px; gap: 9px; }
   .card-photo { width: 62px; height: 82px; }
   .card-photo .photo-fallback { font-size: 26px; }
   .card-name { font-size: 15px; }
-  .card-father { font-size: 11px; font-weight: 600; }
+  .card-father { font-size: 9.5px; }
   .card-member-title { font-size: 5.5px; letter-spacing: 1.1px; }
   .card-member-title span { font-size: 8px; }
-  .card-id-box { padding: 4px 6px; }
+  .card-id-box { padding: 4px 8px; }
   .card-id-box small { font-size: 5.5px; }
-  .card-id-box strong { font-size: 9px; letter-spacing: 0.2px; }
+  .card-id-box strong { font-size: 11px; }
   .card-qr img { width: 62px; height: 62px; }
   .card-qr small { font-size: 5px; }
   .card-qr small span { font-size: 6.5px; }
@@ -856,16 +832,15 @@ body {
   .card-meta-item strong { font-size: 8px; }
   .card-meta-item strong.en { font-size: 7.5px; }
 
-  .card-watermark { font-size: 26px; }
+  .card-watermark { font-size: 32px; }
   .hologram { width: 28px; height: 28px; font-size: 12px; }
 
-  .back-body { grid-template-columns: 1fr 1fr 60px; gap: 8px; }
-  .back-body > div:nth-child(2) { grid-template-columns: 1fr 1fr; gap: 4px; }
+  .back-body { grid-template-columns: 1fr 68px; gap: 8px; }
   .back-section li,
   .back-section p { font-size: 7px; }
   .back-section h4 { font-size: 6px; }
   .back-section h4 span { font-size: 7px; }
-  .back-qr-col img { width: 44px; height: 44px; }
+  .back-qr-col img { width: 55px; height: 55px; }
 
   .back-verification strong { font-size: 10px; }
   .back-signature { font-size: 6.5px; }
