@@ -801,8 +801,8 @@
         }
 
         setTimeout(() => {
-          window.location.href = '/thank-you.html?id=' + encodeURIComponent(result.submissionId || '');
-        }, 1200);
+    window.location.href = '/thank-you.html?id=' + (result.submissionId || '') + '&member=' + encodeURIComponent(result.memberId || '');
+}, 1200);
 
       } catch (err) {
         console.error('[submit]', err);
