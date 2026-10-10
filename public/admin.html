@@ -25,25 +25,33 @@
         <h1>Admin Panel</h1>
         <p class="login-sub">क्षत्रिय करणी सेना — वाराणसी</p>
 
-        <form id="login-form" autocomplete="off" novalidate>
-            <div class="field">
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username"
-                       placeholder="Enter username"
-                       required autocomplete="username"
-                       autocapitalize="off" spellcheck="false">
-            </div>
-            <div class="field">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password"
-                       placeholder="Enter password"
-                       required autocomplete="current-password">
-            </div>
-            <button type="submit" class="btn btn-primary btn-full" id="login-btn">
-                Continue
-            </button>
-            <div class="login-error" id="login-error" role="alert" aria-live="polite"></div>
-        </form>
+     <form id="login-form" autocomplete="off" novalidate>
+    <div class="field">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username"
+               placeholder="Enter username"
+               required autocomplete="username"
+               autocapitalize="off" spellcheck="false">
+    </div>
+    <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password"
+               placeholder="Enter password"
+               required autocomplete="current-password">
+    </div>
+    <div class="field" id="setup-key-wrap" style="display:none;">
+        <label for="setup-key">Setup Key</label>
+        <input type="password" id="setup-key" name="setup-key"
+               placeholder="Enter 32-character setup key"
+               autocomplete="off"
+               spellcheck="false">
+        <small class="hint">Required only for first-time 2FA setup</small>
+    </div>
+    <button type="submit" class="btn btn-primary btn-full" id="login-btn">
+        Continue
+    </button>
+    <div class="login-error" id="login-error" role="alert" aria-live="polite"></div>
+</form>
 
         <a href="/" class="back-home">← मुख्य पृष्ठ पर वापस जाएँ</a>
     </div>
