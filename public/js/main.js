@@ -811,7 +811,7 @@
 
       } catch (err) {
         console.error('[submit]', err);
-        showStatus('क्षमा करें, आवेदन जमा नहीं हो सका। कृपया दोबारा प्रयास करें।', 'error-msg');
+        showStatus('क्षमा करें, आवेदन जमा नहीं हो सका। (' + (err.message || 'unknown') + ')', 'error-msg');
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = originalText;
