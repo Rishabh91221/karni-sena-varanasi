@@ -704,9 +704,32 @@
 
   // ============ TURNSTILE CALLBACKS ============
   window.onTurnstileSuccess = function (token) {
-    const tokenEl = document.getElementById('turnstile_token');
-    if (tokenEl) tokenEl.value = token;
-  };
+  const tokenEl = document.getElementById('turnstile_token');
+  if (tokenEl) tokenEl.value = token;
+  // If there's a stale error message from a previous attempt, clear it
+  const statusEl = document.getElementById('form-status');
+  if (statusEl && statusEl.textContent.indexOf('सुरक्षा') !== -1) {
+    statusEl.textContent = '';
+    statusEl.className = 'form-status';
+  }
+};
+
+window.onTurnstileExpired = function () {
+  const tokenEl = document.getElementById('turnstile_token');
+  if (tokenEl) tokenEl.value = '';
+  // Auto-reset to get a new token
+  if (window.turnstile) {
+    const widget = document.querySelector('.cf-turnstile');
+    if (widget) {
+      try { window.turnstile.reset(widget); } catch (e) {}
+    }
+  }
+};
+
+window.onTurnstileError = function () {
+  const tokenEl = document.getElementById('turnstile_token');
+  if (tokenEl) tokenEl.value = '';
+};
 
   window.onTurnstileExpired = function () {
     const tokenEl = document.getElementById('turnstile_token');
@@ -810,9 +833,19 @@
         }, 1200);
 
       } catch (err) {
-        console.error('[submit]', err);
-        showStatus('क्षमा करें, आवेदन जमा नहीं हो सका। (' + (err.message || 'unknown') + ')', 'error-msg');
-      } finally {
+    console.error('[submit]', err);
+    showStatus('क्षमा करें, आवेदन जमा नहीं हो सका। (' + (err.message || 'unknown') + ')', 'error-msg');
+    
+    // Reset Turnstile so user gets a fresh token for retry
+    if (window.turnstile) {
+      const widget = document.querySelector('.cf-turnstile');
+      if (widget) {
+        try { window.turnstile.reset(widget); } catch (e) {}
+      }
+    }
+    const tokenEl = document.getElementById('turnstile_token');
+    if (tokenEl) tokenEl.value = '';
+} finally {
         submitBtn.disabled = false;
         submitBtn.textContent = originalText;
       }
