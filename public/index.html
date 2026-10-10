@@ -346,29 +346,83 @@
                         <small class="error" data-for="aadhaar" role="alert"></small>
                     </div>
 
-                    <!-- Candidate Photo -->
-                    <div class="field field-photo">
-                        <label for="photo">उम्मीदवार की फोटो <span class="req" aria-hidden="true">*</span></label>
-                        <div class="file-drop" id="photo-drop">
-                            <input type="file"
-                                   id="photo"
-                                   name="photo"
-                                   accept="image/jpeg,image/png,image/webp"
-                                   required
-                                   aria-describedby="photo-hint">
-                            <div class="file-drop-inner">
-                                <div class="file-icon" aria-hidden="true">📷</div>
-                                <div class="file-text">
-                                    <strong>फोटो चुनें</strong>
-                                    <span>या यहाँ खींच कर छोड़ें</span>
-                                </div>
-                                <div class="file-preview" id="photo-preview"></div>
-                            </div>
-                        </div>
-                        <small class="hint" id="photo-hint">JPG/PNG/WebP — अधिकतम 5MB, स्पष्ट फोटो अपलोड करें।</small>
-                        <small class="error" data-for="photo" role="alert"></small>
-                    </div>
+                   <!-- Candidate Photo -->
+<div class="field field-photo">
+    <label for="photo">उम्मीदवार की फोटो <span class="req" aria-hidden="true">*</span></label>
 
+    <!-- ✅ NEW: Photo upload instructions -->
+    <div class="photo-instructions">
+        <div class="photo-instructions-title">
+            📸 फोटो अपलोड करने से पहले ये ध्यान रखें
+            <span>Please follow these guidelines for a valid ID photo</span>
+        </div>
+        <ul class="photo-tips">
+            <li>
+                <span class="tip-icon" aria-hidden="true">✅</span>
+                <span class="tip-text">
+                    <strong>सीधा चेहरा</strong> — कैमरे की ओर देखें, चेहरा साफ दिखे
+                    <small>Face the camera directly, face clearly visible</small>
+                </span>
+            </li>
+            <li>
+                <span class="tip-icon" aria-hidden="true">✅</span>
+                <span class="tip-text">
+                    <strong>अच्छी रोशनी</strong> — दिन की रोशनी या उज्ज्वल प्रकाश में खींची फोटो
+                    <small>Use bright daylight or good indoor lighting</small>
+                </span>
+            </li>
+            <li>
+                <span class="tip-icon" aria-hidden="true">✅</span>
+                <span class="tip-text">
+                    <strong>सादा पृष्ठभूमि</strong> — सफेद या हल्की दीवार के सामने खींचें
+                    <small>Plain white or light background</small>
+                </span>
+            </li>
+            <li>
+                <span class="tip-icon" aria-hidden="true">❌</span>
+                <span class="tip-text">
+                    <strong>चश्मा / टोपी नहीं</strong> — धूप का चश्मा, कैप या मास्क न पहनें
+                    <small>No sunglasses, caps, or masks</small>
+                </span>
+            </li>
+            <li>
+                <span class="tip-icon" aria-hidden="true">❌</span>
+                <span class="tip-text">
+                    <strong>ग्रुप फोटो नहीं</strong> — केवल अकेले की हेड-शॉट (कंधों तक)
+                    <small>No group photos — single person, head to shoulders only</small>
+                </span>
+            </li>
+            <li>
+                <span class="tip-icon" aria-hidden="true">ℹ️</span>
+                <span class="tip-text">
+                    <strong>फ़ाइल:</strong> JPG / PNG / WebP · अधिकतम 5 MB · पासपोर्ट आकार उत्तम
+                    <small>File: JPG/PNG/WebP · max 5 MB · passport-style portrait is ideal</small>
+                </span>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Existing drop zone — unchanged -->
+    <div class="file-drop" id="photo-drop">
+        <input type="file"
+               id="photo"
+               name="photo"
+               accept="image/jpeg,image/png,image/webp"
+               required
+               aria-describedby="photo-hint">
+        <div class="file-drop-inner">
+            <div class="file-icon" aria-hidden="true">📷</div>
+            <div class="file-text">
+                <strong>फोटो चुनें</strong>
+                <span>या यहाँ खींच कर छोड़ें</span>
+            </div>
+            <div class="file-preview" id="photo-preview"></div>
+        </div>
+    </div>
+
+    <small class="hint" id="photo-hint">JPG/PNG/WebP — अधिकतम 5MB, स्पष्ट फोटो अपलोड करें।</small>
+    <small class="error" data-for="photo" role="alert"></small>
+</div>
                     <!-- Additional Info (Optional) -->
                     <div class="field">
                         <label for="additional">अतिरिक्त जानकारी (वैकल्पिक)</label>
