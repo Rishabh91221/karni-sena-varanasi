@@ -167,24 +167,36 @@
 
                 // Member ID + card download button
                 const memberId = params.get('member');
-                if (memberId && /^KSV-\d{4}-[A-Z0-9]{4,8}$/.test(memberId)) {
+const cardToken = params.get('t');
 
-                    // Show member ID box
-                    const midBox = document.getElementById('member-id-box');
-                    const midVal = document.getElementById('member-id-value');
-                    if (midBox && midVal) {
-                        midVal.textContent = memberId;
-                        midBox.style.display = 'inline-flex';
-                    }
+if (memberId && /^KSV-\d{4}-[A-Z0-9]{4,8}$/.test(memberId)) {
 
-                    // Show card download section
-                    const section = document.getElementById('card-download-section');
-                    const btn = document.getElementById('download-card-btn');
-                    if (section && btn) {
-                        btn.href = 'https://karni-sena-backend.smritiiasacademy.workers.dev/card/' + encodeURIComponent(memberId);
-                        section.style.display = 'block';
-                    }
-                }
+    // Show member ID box
+    const midBox = document.getElementById('member-id-box');
+    const midVal = document.getElementById('member-id-value');
+    if (midBox && midVal) {
+        midVal.textContent = memberId;
+        midBox.style.display = 'inline-flex';
+    }
+
+    // Show card download section ONLY if we have a valid token
+    const section = document.getElementById('card-download-section');
+    const btn = document.getElementById('download-card-btn');
+
+    if (section && btn) {
+        if (cardToken && /^[a-f0-9]{32}$/i.test(cardToken)) {
+            // ✅ Token present — build the correct URL
+            btn.href = 'https://karni-sena-backend.smritiiasacademy.workers.dev/card/'
+                     + encodeURIComponent(memberId)
+                     + '?t=' + encodeURIComponent(cardToken);
+            section.style.display = 'block';
+        } else {
+            // ⚠️ No token — hide the button (avoids showing a broken link)
+            console.warn('[thank-you] card_token missing from URL');
+            section.style.display = 'none';
+        }
+    }
+}
             } catch (e) {
                 console.error('[thank-you] URL param error:', e);
             }
