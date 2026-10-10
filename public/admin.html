@@ -7,48 +7,41 @@
     <meta name="robots" content="noindex, nofollow">
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <title>Admin — क्षत्रिय करणी सेना वाराणसी</title>
-    
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi:ital@0;1&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/admin.css">
     <link rel="icon" type="image/png" href="/assets/logo.png">
 </head>
 <body>
 
-<!-- ============ LOGIN SCREEN ============ -->
+<!-- ============================================================
+     LOGIN SCREEN (Stage 1: Credentials)
+     ============================================================ -->
 <div id="login-screen" class="login-screen" role="main">
     <div class="login-card">
-        <img src="/assets/logo.png" 
-             alt="क्षत्रिय करणी सेना का लोगो" 
-             class="login-logo"
-             width="80"
-             height="80">
+        <img src="/assets/logo.png" alt="लोगो" class="login-logo" width="80" height="80">
         <h1>Admin Panel</h1>
         <p class="login-sub">क्षत्रिय करणी सेना — वाराणसी</p>
 
         <form id="login-form" autocomplete="off" novalidate>
             <div class="field">
                 <label for="username">Username</label>
-                <input type="text" 
-                       id="username" 
-                       name="username"
-                       placeholder="Enter username" 
-                       required 
-                       autocomplete="username"
-                       autocapitalize="off"
-                       spellcheck="false">
+                <input type="text" id="username" name="username"
+                       placeholder="Enter username"
+                       required autocomplete="username"
+                       autocapitalize="off" spellcheck="false">
             </div>
             <div class="field">
                 <label for="password">Password</label>
-                <input type="password" 
-                       id="password" 
-                       name="password"
-                       placeholder="Enter password" 
-                       required 
-                       autocomplete="current-password">
+                <input type="password" id="password" name="password"
+                       placeholder="Enter password"
+                       required autocomplete="current-password">
             </div>
-            <button type="submit" class="btn btn-primary btn-full" id="login-btn">Log In</button>
+            <button type="submit" class="btn btn-primary btn-full" id="login-btn">
+                Continue
+            </button>
             <div class="login-error" id="login-error" role="alert" aria-live="polite"></div>
         </form>
 
@@ -56,17 +49,135 @@
     </div>
 </div>
 
-<!-- ============ DASHBOARD ============ -->
+<!-- ============================================================
+     2FA SCREEN (Stage 2: Verification Code)
+     ============================================================ -->
+<div id="twofa-screen" class="login-screen" role="main" style="display:none;">
+    <div class="login-card">
+        <img src="/assets/logo.png" alt="लोगो" class="login-logo" width="80" height="80">
+        <h1>2FA Verification</h1>
+        <p class="login-sub">Enter the 6-digit code from your authenticator app</p>
+
+        <form id="twofa-form" autocomplete="off" novalidate>
+            <div class="field">
+                <label for="totp-code">Authentication Code</label>
+                <input type="text" id="totp-code" name="totp-code"
+                       placeholder="000000"
+                       required inputmode="numeric" pattern="[0-9A-Za-z ]*"
+                       maxlength="12" autocomplete="one-time-code"
+                       autocapitalize="characters" spellcheck="false"
+                       class="totp-input">
+                <small class="hint">
+                    Enter 6-digit code from Google Authenticator — or an 8-character backup code.
+                </small>
+            </div>
+            <button type="submit" class="btn btn-primary btn-full" id="twofa-btn">
+                Verify &amp; Login
+            </button>
+            <div class="login-error" id="twofa-error" role="alert" aria-live="polite"></div>
+        </form>
+
+        <button type="button" id="twofa-back" class="back-home" style="background:none;border:none;cursor:pointer;padding:0;font:inherit;">
+            ← Back to login
+        </button>
+    </div>
+</div>
+
+<!-- ============================================================
+     2FA SETUP WIZARD (For first-time setup)
+     ============================================================ -->
+<div id="setup-screen" class="login-screen" role="main" style="display:none;">
+    <div class="login-card setup-card">
+        <img src="/assets/logo.png" alt="लोगो" class="login-logo" width="80" height="80">
+        <h1>Setup 2FA</h1>
+        <p class="login-sub">Scan this QR code with Google Authenticator</p>
+
+        <div class="setup-step" id="setup-step-1">
+            <div class="qr-container" id="qr-container">
+                <div class="spinner">Loading QR...</div>
+            </div>
+
+            <div class="setup-instructions">
+                <ol>
+                    <li>Open <strong>Google Authenticator</strong> on your phone</li>
+                    <li>Tap the <strong>+</strong> button → <strong>Scan QR code</strong></li>
+                    <li>Point your camera at the QR code above</li>
+                    <li>Tap <strong>Continue</strong> below</li>
+                </ol>
+            </div>
+
+            <details class="manual-entry">
+                <summary>Can't scan? Enter manually</summary>
+                <div class="manual-secret">
+                    <code id="manual-secret">—</code>
+                    <button type="button" id="copy-secret-btn" class="copy-btn">Copy</button>
+                </div>
+            </details>
+
+            <button type="button" class="btn btn-primary btn-full" id="setup-continue-btn">
+                I've Added It — Continue
+            </button>
+        </div>
+
+        <div class="setup-step" id="setup-step-2" style="display:none;">
+            <p class="setup-step-title">
+                Enter the 6-digit code shown in your authenticator app to confirm:
+            </p>
+
+            <div class="field">
+                <input type="text" id="setup-totp-input"
+                       placeholder="000000"
+                       inputmode="numeric" pattern="[0-9]*"
+                       maxlength="6"
+                       class="totp-input"
+                       autocomplete="one-time-code">
+            </div>
+
+            <button type="button" class="btn btn-primary btn-full" id="setup-verify-btn">
+                Verify &amp; Enable 2FA
+            </button>
+
+            <div class="login-error" id="setup-error" role="alert" aria-live="polite"></div>
+
+            <button type="button" class="back-home" id="setup-back-btn"
+                    style="background:none;border:none;cursor:pointer;padding:0;font:inherit;">
+                ← Back to login
+            </button>
+        </div>
+
+        <div class="setup-step" id="setup-step-3" style="display:none;">
+            <div class="setup-success-icon">✅</div>
+            <h2 class="setup-success-title">2FA Enabled</h2>
+            <p class="setup-success-text">
+                Save these backup codes somewhere safe. Each can be used once if you lose your phone.
+            </p>
+
+            <div class="backup-codes" id="backup-codes-list"></div>
+
+            <button type="button" class="btn btn-outline btn-full" id="download-codes-btn">
+                📥 Download Codes
+            </button>
+
+            <button type="button" class="btn btn-primary btn-full" id="setup-done-btn">
+                I've Saved Them — Continue to Dashboard
+            </button>
+
+            <p class="backup-warning">
+                ⚠️ You will not see these codes again. Store them safely.
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     DASHBOARD
+     ============================================================ -->
 <div id="dashboard" class="dashboard" style="display:none;" role="main">
 
-    <!-- Top bar -->
+    <!-- Header -->
     <header class="admin-header">
         <div class="admin-header-left">
-            <img src="/assets/logo.png" 
-                 alt="लोगो" 
-                 class="admin-logo"
-                 width="42"
-                 height="42">
+            <img src="/assets/logo.png" alt="लोगो" class="admin-logo" width="42" height="42">
             <div>
                 <strong>Admin Dashboard</strong>
                 <small>क्षत्रिय करणी सेना — वाराणसी</small>
@@ -78,87 +189,307 @@
         </div>
     </header>
 
+    <!-- Tabs -->
+    <nav class="admin-tabs" id="admin-tabs" role="tablist">
+        <button class="tab-btn active" data-tab="dashboard" type="button" role="tab">
+            <span class="tab-icon">📊</span> <span class="tab-label">Dashboard</span>
+        </button>
+        <button class="tab-btn" data-tab="members" type="button" role="tab">
+            <span class="tab-icon">👥</span> <span class="tab-label">Members</span>
+        </button>
+        <button class="tab-btn" data-tab="gallery" type="button" role="tab">
+            <span class="tab-icon">📸</span> <span class="tab-label">Gallery</span>
+        </button>
+        <button class="tab-btn" data-tab="slider" type="button" role="tab">
+            <span class="tab-icon">🎬</span> <span class="tab-label">Slider</span>
+        </button>
+        <button class="tab-btn" data-tab="events" type="button" role="tab">
+            <span class="tab-icon">📅</span> <span class="tab-label">Events</span>
+        </button>
+        <button class="tab-btn" data-tab="news" type="button" role="tab">
+            <span class="tab-icon">📰</span> <span class="tab-label">News</span>
+        </button>
+        <button class="tab-btn" data-tab="ads" type="button" role="tab">
+            <span class="tab-icon">📢</span> <span class="tab-label">Ads</span>
+        </button>
+        <button class="tab-btn" data-tab="team" type="button" role="tab">
+            <span class="tab-icon">👑</span> <span class="tab-label">Team</span>
+        </button>
+        <button class="tab-btn" data-tab="content" type="button" role="tab">
+            <span class="tab-icon">📝</span> <span class="tab-label">Content</span>
+        </button>
+        <button class="tab-btn" data-tab="settings" type="button" role="tab">
+            <span class="tab-icon">⚙️</span> <span class="tab-label">Settings</span>
+        </button>
+    </nav>
+
     <main class="admin-main">
 
-        <!-- ============ STATS CARDS ============ -->
-        <section class="stats-grid" aria-label="Statistics">
-            <div class="stat-card">
-                <div class="stat-icon" aria-hidden="true">📊</div>
-                <div class="stat-value" id="stat-total">—</div>
-                <div class="stat-label">कुल आवेदन</div>
+        <!-- ========== DASHBOARD TAB ============ -->
+        <section class="tab-panel active" id="tab-dashboard" role="tabpanel">
+            <h2 class="panel-title">Dashboard</h2>
+            <p class="panel-subtitle">Overview of your organization</p>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-value" data-stat="total">—</div>
+                    <div class="stat-label">कुल सदस्य</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📅</div>
+                    <div class="stat-value" data-stat="today">—</div>
+                    <div class="stat-label">आज</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⏳</div>
+                    <div class="stat-value" data-stat="pending">—</div>
+                    <div class="stat-label">प्रलंबित</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-value" data-stat="active">—</div>
+                    <div class="stat-label">सक्रिय</div>
+                </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon" aria-hidden="true">📅</div>
-                <div class="stat-value" id="stat-today">—</div>
-                <div class="stat-label">आज</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon" aria-hidden="true">📈</div>
-                <div class="stat-value" id="stat-week">—</div>
-                <div class="stat-label">इस हफ़्ते</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon" aria-hidden="true">🗓️</div>
-                <div class="stat-value" id="stat-month">—</div>
-                <div class="stat-label">इस महीने</div>
+
+            <h3 class="section-heading">Recent Activity</h3>
+            <div class="activity-feed" id="activity-feed">
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
             </div>
         </section>
 
-        <!-- ============ TOOLBAR ============ -->
-        <section class="toolbar" aria-label="Filters">
-            <div class="toolbar-left">
-                <input type="search" 
-                       id="search-input" 
-                       placeholder="🔍 नाम, मोबाइल, आधार से खोजें..." 
-                       aria-label="Search submissions">
-                <input type="date" 
-                       id="date-from" 
-                       title="From date" 
-                       aria-label="Filter from date">
-                <input type="date" 
-                       id="date-to" 
-                       title="To date" 
-                       aria-label="Filter to date">
-                <button id="clear-filters" class="btn-text" type="button">Clear</button>
+        <!-- ========== MEMBERS TAB ============ -->
+        <section class="tab-panel" id="tab-members" role="tabpanel">
+            <h2 class="panel-title">Members</h2>
+            <p class="panel-subtitle">Manage all applications</p>
+
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <input type="search" id="member-search" placeholder="🔍 नाम, मोबाइल, ID से खोजें..." aria-label="Search">
+                    <select id="member-status-filter" class="status-filter">
+                        <option value="">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="active">Active</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                    <button id="members-refresh" class="btn-text" type="button">🔄 Refresh</button>
+                </div>
+                <div class="toolbar-right">
+                    <button id="members-export" class="btn btn-outline btn-small" type="button">📥 Export CSV</button>
+                </div>
             </div>
-            <div class="toolbar-right">
-                <button id="refresh-btn" class="btn btn-outline btn-small" type="button">🔄 Refresh</button>
-                <button id="export-btn" class="btn btn-primary btn-small" type="button">📥 Export CSV</button>
+
+            <div class="table-wrap">
+                <div class="table-status" id="members-status">लोड हो रहा है...</div>
+                <table class="submissions-table" id="members-table" style="display:none;">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Member ID</th>
+                            <th>नाम</th>
+                            <th>मोबाइल</th>
+                            <th>आधार</th>
+                            <th>फोटो</th>
+                            <th>Status</th>
+                            <th>दिनांक</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="members-tbody"></tbody>
+                </table>
             </div>
         </section>
 
-        <!-- ============ TABLE ============ -->
-        <section class="table-wrap">
-            <div class="table-status" id="table-status" role="status" aria-live="polite">लोड हो रहा है...</div>
-            <table class="submissions-table" id="submissions-table" style="display:none;">
-                <thead>
-                    <tr>
-                        <th scope="col">#</th>
-                        <th scope="col">नाम</th>
-                        <th scope="col">पिता का नाम</th>
-                        <th scope="col">मोबाइल</th>
-                        <th scope="col">आधार</th>
-                        <th scope="col">जिला</th>
-                        <th scope="col">फोटो</th>
-                        <th scope="col">दिनांक</th>
-                        <th scope="col">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="table-body"></tbody>
-            </table>
+        <!-- ========== GALLERY TAB ============ -->
+        <section class="tab-panel" id="tab-gallery" role="tabpanel">
+            <div class="panel-header-row">
+                <div>
+                    <h2 class="panel-title">Gallery</h2>
+                    <p class="panel-subtitle">Photos displayed on the public site</p>
+                </div>
+                <button class="btn btn-primary" id="gallery-add-btn" type="button">+ Add Photo</button>
+            </div>
+            <div class="collection-grid" id="gallery-grid">
+                <div class="collection-empty">
+                    <div class="collection-empty-icon">📸</div>
+                    <p>Loading gallery...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== SLIDER TAB ============ -->
+        <section class="tab-panel" id="tab-slider" role="tabpanel">
+            <div class="panel-header-row">
+                <div>
+                    <h2 class="panel-title">Hero Slider</h2>
+                    <p class="panel-subtitle">Homepage rotating images</p>
+                </div>
+                <button class="btn btn-primary" id="slider-add-btn" type="button">+ Add Slide</button>
+            </div>
+            <div class="collection-grid collection-grid-wide" id="slider-grid">
+                <div class="collection-empty">
+                    <div class="collection-empty-icon">🎬</div>
+                    <p>Loading slides...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== EVENTS TAB ============ -->
+        <section class="tab-panel" id="tab-events" role="tabpanel">
+            <div class="panel-header-row">
+                <div>
+                    <h2 class="panel-title">Events</h2>
+                    <p class="panel-subtitle">Organization events</p>
+                </div>
+                <button class="btn btn-primary" id="events-add-btn" type="button">+ Add Event</button>
+            </div>
+            <div class="collection-list" id="events-list">
+                <div class="collection-empty">
+                    <div class="collection-empty-icon">📅</div>
+                    <p>Loading events...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== NEWS TAB ============ -->
+        <section class="tab-panel" id="tab-news" role="tabpanel">
+            <div class="panel-header-row">
+                <div>
+                    <h2 class="panel-title">News &amp; Updates</h2>
+                    <p class="panel-subtitle">Published news items</p>
+                </div>
+                <button class="btn btn-primary" id="news-add-btn" type="button">+ Add News</button>
+            </div>
+            <div class="collection-list" id="news-list">
+                <div class="collection-empty">
+                    <div class="collection-empty-icon">📰</div>
+                    <p>Loading news...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== ADS TAB ============ -->
+        <section class="tab-panel" id="tab-ads" role="tabpanel">
+            <div class="panel-header-row">
+                <div>
+                    <h2 class="panel-title">Advertisements &amp; Notices</h2>
+                    <p class="panel-subtitle">Banners and announcements</p>
+                </div>
+                <button class="btn btn-primary" id="ads-add-btn" type="button">+ Add Ad</button>
+            </div>
+            <div class="collection-list" id="ads-list">
+                <div class="collection-empty">
+                    <div class="collection-empty-icon">📢</div>
+                    <p>Loading ads...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== TEAM TAB ============ -->
+        <section class="tab-panel" id="tab-team" role="tabpanel">
+            <div class="panel-header-row">
+                <div>
+                    <h2 class="panel-title">Team Members</h2>
+                    <p class="panel-subtitle">Leadership displayed on the site</p>
+                </div>
+                <button class="btn btn-primary" id="team-add-btn" type="button">+ Add Member</button>
+            </div>
+            <div class="collection-grid" id="team-grid">
+                <div class="collection-empty">
+                    <div class="collection-empty-icon">👑</div>
+                    <p>Loading team...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== CONTENT TAB ============ -->
+        <section class="tab-panel" id="tab-content" role="tabpanel">
+            <h2 class="panel-title">Site Content</h2>
+            <p class="panel-subtitle">Edit text shown on the public site</p>
+
+            <div class="content-editor" id="content-editor">
+                <div class="collection-empty">
+                    <div class="collection-empty-icon">📝</div>
+                    <p>Loading content...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== SETTINGS TAB ============ -->
+        <section class="tab-panel" id="tab-settings" role="tabpanel">
+            <h2 class="panel-title">Settings</h2>
+            <p class="panel-subtitle">Security and preferences</p>
+
+            <div class="settings-section">
+                <h3 class="settings-heading">Two-Factor Authentication</h3>
+                <div class="settings-row">
+                    <div>
+                        <strong>2FA Status</strong>
+                        <p class="settings-note" id="2fa-status-text">Checking...</p>
+                    </div>
+                    <button class="btn btn-outline" id="2fa-manage-btn" type="button">Manage</button>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3 class="settings-heading">Session</h3>
+                <div class="settings-row">
+                    <div>
+                        <strong>Log Out Everywhere</strong>
+                        <p class="settings-note">Invalidates all active sessions</p>
+                    </div>
+                    <button class="btn btn-outline" id="logout-all-btn" type="button">Log Out All</button>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3 class="settings-heading">About</h3>
+                <div class="settings-info">
+                    <p><strong>Version:</strong> v4.0</p>
+                    <p><strong>Backend:</strong> Cloudflare Workers</p>
+                    <p><strong>Database:</strong> Cloudflare D1</p>
+                    <p><strong>Storage:</strong> Cloudflare R2</p>
+                </div>
+            </div>
         </section>
 
     </main>
 </div>
 
-<!-- ============ DETAIL MODAL ============ -->
+<!-- ============================================================
+     MODAL (generic — used for add/edit forms)
+     ============================================================ -->
 <div class="modal-backdrop" id="modal-backdrop" style="display:none;" aria-hidden="true">
-    <div class="modal" role="dialog" aria-labelledby="modal-title" aria-modal="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div class="modal-header">
-            <h2 id="modal-title">आवेदन विवरण</h2>
-            <button id="modal-close" class="modal-close" aria-label="Close modal" type="button">✕</button>
+            <h2 id="modal-title">Detail</h2>
+            <button class="modal-close" id="modal-close" aria-label="Close" type="button">✕</button>
         </div>
         <div class="modal-body" id="modal-body"></div>
+    </div>
+</div>
+
+<!-- ============================================================
+     TOAST CONTAINER
+     ============================================================ -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ============================================================
+     CONFIRM MODAL
+     ============================================================ -->
+<div class="modal-backdrop" id="confirm-backdrop" style="display:none;" aria-hidden="true">
+    <div class="modal modal-narrow" role="alertdialog" aria-modal="true">
+        <div class="modal-header modal-header-warning">
+            <h2>Confirm</h2>
+        </div>
+        <div class="modal-body" id="confirm-body"></div>
+        <div class="confirm-actions">
+            <button class="btn btn-outline" id="confirm-cancel" type="button">Cancel</button>
+            <button class="btn btn-danger" id="confirm-ok" type="button">Confirm</button>
+        </div>
     </div>
 </div>
 
