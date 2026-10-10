@@ -801,7 +801,13 @@
         }
 
         setTimeout(() => {
-    window.location.href = '/thank-you.html?id=' + (result.submissionId || '') + '&member=' + encodeURIComponent(result.memberId || '');
+    windsetTimeout(() => {
+    const params = new URLSearchParams({
+        id:     result.submissionId || '',
+        member: result.memberId      || '',
+        t:      result.card_token    || '',
+    });
+    window.location.href = '/thank-you.html?' + params.toString();
 }, 1200);
 
       } catch (err) {
