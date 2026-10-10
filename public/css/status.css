@@ -1,0 +1,343 @@
+/* ============================================================
+   KARNI SENA VARANASI — Status Page Styles
+   ============================================================ */
+
+:root {
+    --saffron:       #E87A1E;
+    --saffron-light: #F5A623;
+    --maroon:        #7B1E1E;
+    --maroon-deep:   #3D0F0F;
+    --gold:          #D4AF37;
+    --cream:         #FFF8E7;
+    --white:         #FFFFFF;
+    --green:         #22C55E;
+    --yellow:        #F59E0B;
+    --red:           #EF4444;
+    --text:          #1A1A1A;
+    --text-muted:    #6B6B6B;
+    --border:        #E5E5E5;
+    --radius:        12px;
+    --radius-lg:     20px;
+    --shadow:        0 4px 20px rgba(0,0,0,0.08);
+    --font-hi: 'Tiro Devanagari Hindi', serif;
+    --font-en: 'Inter', -apple-system, sans-serif;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-en);
+    background: linear-gradient(135deg, #F5EFE2 0%, #FFF8E7 100%);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+
+.status-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+.status-container {
+    max-width: 700px;
+    width: 100%;
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    padding: 3rem 2rem;
+}
+
+/* Header */
+.status-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.status-logo {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--cream);
+    padding: 3px;
+    margin: 0 auto 1rem;
+    object-fit: cover;
+    box-shadow: 0 2px 12px rgba(232, 122, 30, 0.2);
+}
+
+.status-header h1 {
+    font-size: 1.8rem;
+    color: var(--maroon);
+    margin-bottom: 0.3rem;
+    font-weight: 700;
+}
+
+.status-subtitle {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* Summary card */
+.status-summary {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-radius: var(--radius);
+    margin-bottom: 2rem;
+    transition: all 0.3s ease;
+    background: #F8F8F8;
+    border: 1px solid var(--border);
+}
+
+.status-summary.checking {
+    background: #FFFBEB;
+    border-color: #FCD34D;
+}
+
+.status-summary.healthy {
+    background: #F0FDF4;
+    border-color: #BBF7D0;
+}
+
+.status-summary.warning {
+    background: #FFFBEB;
+    border-color: #FCD34D;
+}
+
+.status-summary.critical {
+    background: #FEF2F2;
+    border-color: #FECACA;
+}
+
+.status-summary-icon {
+    font-size: 2rem;
+    line-height: 1;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.status-summary.healthy .status-summary-icon {
+    animation: none;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.6; transform: scale(0.95); }
+}
+
+.status-summary-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.status-summary-text strong {
+    font-size: 1.1rem;
+    color: var(--text);
+}
+
+.status-summary-text span {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.status-summary.healthy .status-summary-text strong {
+    color: #15803D;
+}
+
+.status-summary.critical .status-summary-text strong {
+    color: #B91C1C;
+}
+
+/* Checks grid */
+.status-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-bottom: 2rem;
+}
+
+.check-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.9rem 1rem;
+    background: #FAFAFA;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    transition: all 0.2s ease;
+    animation: slideIn 0.3s ease both;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.check-item:hover {
+    background: var(--white);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.check-left {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    min-width: 0;
+}
+
+.check-icon {
+    font-size: 1.2rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.check-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.check-name {
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--text);
+}
+
+.check-message {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.check-right {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-shrink: 0;
+}
+
+.check-time {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    min-width: 48px;
+    text-align: right;
+}
+
+.check-status {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    min-width: 70px;
+    text-align: center;
+}
+
+.check-status.healthy  { background: #DCFCE7; color: #15803D; }
+.check-status.warning  { background: #FEF3C7; color: #92400E; }
+.check-status.critical { background: #FEE2E2; color: #B91C1C; }
+.check-status.checking { background: #E5E7EB; color: #4B5563; }
+
+/* Footer */
+.status-footer {
+    text-align: center;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+}
+
+.status-footer > p:first-child {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+
+#last-checked {
+    font-weight: 600;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+
+.refresh-btn {
+    background: var(--saffron);
+    color: var(--white);
+    border: none;
+    padding: 0.75rem 1.8rem;
+    border-radius: 999px;
+    font-family: inherit;
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(232, 122, 30, 0.3);
+}
+
+.refresh-btn:hover {
+    background: var(--saffron-light);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(232, 122, 30, 0.4);
+}
+
+.refresh-btn:active {
+    transform: translateY(0);
+}
+
+.refresh-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.status-note {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 0.8rem;
+}
+
+/* Back link */
+.status-back {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+}
+
+.status-back a {
+    color: var(--maroon);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.status-back a:hover {
+    color: var(--saffron);
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+    body { padding: 1rem; }
+    .status-container { padding: 2rem 1.25rem; }
+    .status-header h1 { font-size: 1.5rem; }
+    .check-time { display: none; }
+    .check-status { min-width: 60px; font-size: 0.7rem; }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
