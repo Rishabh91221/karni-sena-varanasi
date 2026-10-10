@@ -7,35 +7,33 @@
     <meta name="robots" content="noindex, nofollow">
     <meta name="referrer" content="strict-origin-when-cross-origin">
     
-    <!-- ============ SEO / TITLE ============ -->
     <title>आवेदन सफल — क्षत्रिय करणी सेना वाराणसी</title>
-    <meta name="description" content="आपका आवेदन सफलतापूर्वक जमा हो गया है। हमारी टीम शीघ्र ही आपसे संपर्क करेगी।">
+    <meta name="description" content="आपका आवेदन सफलतापूर्वक जमा हो गया है।">
 
-    <!-- ============ OPEN GRAPH ============ -->
+    <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="क्षत्रिय करणी सेना — वाराणसी">
     <meta property="og:title" content="आवेदन सफल — क्षत्रिय करणी सेना वाराणसी">
-    <meta property="og:description" content="आपका आवेदन सफलतापूर्वक जमा हो गया है। हमारी टीम शीघ्र ही आपसे संपर्क करेगी।">
+    <meta property="og:description" content="आपका आवेदन सफलतापूर्वक जमा हो गया है।">
     <meta property="og:url" content="https://karni-sena-varanasi.pages.dev/thank-you.html">
     <meta property="og:image" content="https://karni-sena-varanasi.pages.dev/assets/logo.png">
-    <meta property="og:image:alt" content="क्षत्रिय करणी सेना वाराणसी का लोगो">
     <meta property="og:locale" content="hi_IN">
 
-    <!-- ============ TWITTER / X ============ -->
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="आवेदन सफल — क्षत्रिय करणी सेना वाराणसी">
     <meta name="twitter:description" content="आपका आवेदन सफलतापूर्वक जमा हो गया है।">
     <meta name="twitter:image" content="https://karni-sena-varanasi.pages.dev/assets/logo.png">
 
-    <!-- ============ CANONICAL ============ -->
+    <!-- Canonical -->
     <link rel="canonical" href="https://karni-sena-varanasi.pages.dev/thank-you.html">
 
-    <!-- ============ FONTS ============ -->
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi:ital@0;1&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- ============ STYLES ============ -->
+    <!-- Styles -->
     <link rel="stylesheet" href="/css/thank-you.css">
     <link rel="icon" type="image/png" href="/assets/logo.png">
 </head>
@@ -43,19 +41,18 @@
 
     <main class="thankyou-page" role="main">
 
-        <!-- ============ DECORATIVE BACKGROUND ============ -->
+        <!-- Decorative background -->
         <div class="om-bg" aria-hidden="true">ॐ</div>
         <div class="om-bg om-bg-2" aria-hidden="true">ॐ</div>
         <div class="om-bg om-bg-3" aria-hidden="true">ॐ</div>
 
-        <!-- ============ FLOATING PARTICLES ============ -->
+        <!-- Floating particles -->
         <div class="particles" aria-hidden="true">
             <span></span><span></span><span></span><span></span><span></span>
             <span></span><span></span><span></span><span></span><span></span>
             <span></span><span></span><span></span><span></span><span></span>
         </div>
 
-        <!-- ============ CONTENT ============ -->
         <div class="thankyou-content" role="status" aria-live="polite">
 
             <!-- Success checkmark -->
@@ -92,6 +89,34 @@
                 <span class="ref-id" id="ref-id">—</span>
             </div>
 
+            <!-- Member ID box (shown when ?member=KSV-... is in URL) -->
+            <div class="member-id-box" id="member-id-box" style="display:none;">
+                <span class="member-id-label">आपकी सदस्यता आईडी / Your Member ID</span>
+                <span class="member-id-value" id="member-id-value">—</span>
+            </div>
+
+            <!-- ============ DOWNLOAD CARD SECTION ============ -->
+            <div class="card-download-section" id="card-download-section" style="display:none;">
+                <div class="card-download-icon" aria-hidden="true">🎫</div>
+                <h2 class="card-download-title">आपका सदस्यता कार्ड तैयार है</h2>
+                <p class="card-download-sub">
+                    नीचे दिए बटन से अपना कार्ड डाउनलोड करें। आप इसे PDF के रूप में सेव कर सकते हैं, प्रिंट कर सकते हैं, या फ़ोन में सुरक्षित रख सकते हैं।
+                </p>
+                <a href="#"
+                   id="download-card-btn"
+                   class="btn btn-card-download"
+                   target="_blank"
+                   rel="noopener">
+                    📥 सदस्यता कार्ड डाउनलोड करें
+                    <small>Download Membership Card</small>
+                </a>
+                <p class="card-download-note">
+                    🔒 यह लिंक केवल आपके लिए है। इसे किसी के साथ साझा न करें।
+                    <br>
+                    <span>This link is unique to you. Please do not share it.</span>
+                </p>
+            </div>
+
             <!-- Shloka divider -->
             <div class="shloka-divider" aria-hidden="true">
                 <span class="divider-line"></span>
@@ -122,26 +147,46 @@
         </div>
     </main>
 
-    <!-- ============ REFERENCE ID SCRIPT ============ -->
+    <!-- ============ SCRIPT ============ -->
     <script>
         (function () {
             'use strict';
             try {
                 const params = new URLSearchParams(window.location.search);
-                const rawId = params.get('id');
 
-                // Strict validation: 1-10 digits only (prevents XSS / injection)
+                // Show reference ID (# submission id) if present
+                const rawId = params.get('id');
                 if (rawId && /^\d{1,10}$/.test(rawId)) {
                     const refIdEl = document.getElementById('ref-id');
                     const refBoxEl = document.getElementById('ref-box');
-
                     if (refIdEl && refBoxEl) {
                         refIdEl.textContent = '#' + rawId;
                         refBoxEl.style.display = 'inline-flex';
                     }
                 }
+
+                // Member ID + card download button
+                const memberId = params.get('member');
+                if (memberId && /^KSV-\d{4}-[A-Z0-9]{4,8}$/.test(memberId)) {
+
+                    // Show member ID box
+                    const midBox = document.getElementById('member-id-box');
+                    const midVal = document.getElementById('member-id-value');
+                    if (midBox && midVal) {
+                        midVal.textContent = memberId;
+                        midBox.style.display = 'inline-flex';
+                    }
+
+                    // Show card download section
+                    const section = document.getElementById('card-download-section');
+                    const btn = document.getElementById('download-card-btn');
+                    if (section && btn) {
+                        btn.href = 'https://karni-sena-backend.smritiiasacademy.workers.dev/card/' + encodeURIComponent(memberId);
+                        section.style.display = 'block';
+                    }
+                }
             } catch (e) {
-                // Silent fail — never break page render
+                console.error('[thank-you] URL param error:', e);
             }
         })();
     </script>
