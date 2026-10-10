@@ -731,11 +731,6 @@ window.onTurnstileError = function () {
   if (tokenEl) tokenEl.value = '';
 };
 
-  window.onTurnstileExpired = function () {
-    const tokenEl = document.getElementById('turnstile_token');
-    if (tokenEl) tokenEl.value = '';
-  };
-
   function setupFormSubmit(content) {
     if (!form) return;
     const endpoint = (content && content.formEndpoint) ? content.formEndpoint : '';
