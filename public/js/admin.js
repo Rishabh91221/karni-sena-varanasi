@@ -1,10 +1,14 @@
 /* ============================================================
-   KARNI SENA VARANASI — Admin Panel Logic v4.0
-   ============================================================
-   - Session-token auth (Bearer)
-   - 2FA setup + verify flow
-   - Full CRUD for all CMS tabs
-   - Custom modals, toasts, animations
+   KARNI SENA VARANASI — Admin Panel Logic v5.0
+   Paired with Worker v5.0
+   ------------------------------------------------------------
+   Auth states handled:
+   1. Login with 2FA enabled     → prompts for 6-digit code
+   2. Login with 2FA disabled    → logs in directly (token from /login)
+   3. First-time setup           → wizard + credentials in memory
+   4. Setup complete             → logs in directly (token from /2fa/enable)
+   5. Backup code login          → accepts 8-char codes
+   6. Session expiry             → clears state, returns to login
    ============================================================ */
 
 (function () {
@@ -20,38 +24,32 @@
   // ============================================================
   // STATE
   // ============================================================
-  let session = null;
+  let session = null;              // { token }
   let currentUsername = '';
-  let currentTab = 'dashboard';
-  let setupSecretData = null;
+  let setupSecretData = null;      // Holds { username, password, secret, ... } DURING setup only
   let membersCache = [];
-  let collectionsCache = {
-    gallery: [], slider: [], events: [], news: [], ads: [], team: [],
-  };
   let contentCache = null;
   let searchDebounce = null;
+  let tabsInitialized = false;
 
   // ============================================================
-  // DOM HELPERS
+  // HELPERS
   // ============================================================
-  const $ = (sel, root = document) => root.querySelector(sel);
-  const $$ = (sel, root = document) => root.querySelectorAll(sel);
-
-  function el(tag, className, text) {
+  const el = (tag, className, text) => {
     const node = document.createElement(tag);
     if (className) node.className = className;
     if (text != null) node.textContent = String(text);
     return node;
-  }
+  };
 
-  function escapeHtml(str) {
+  const escapeHtml = (str) => {
     if (str == null) return '';
     return String(str).replace(/[&<>"']/g, c => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
     }[c]));
-  }
+  };
 
-  function formatDate(iso) {
+  const formatDate = (iso) => {
     if (!iso) return '—';
     try {
       return new Date(iso).toLocaleString('en-IN', {
@@ -60,9 +58,9 @@
         hour: '2-digit', minute: '2-digit',
       });
     } catch (e) { return iso; }
-  }
+  };
 
-  function formatDateShort(iso) {
+  const formatDateShort = (iso) => {
     if (!iso) return '—';
     try {
       return new Date(iso).toLocaleDateString('en-IN', {
@@ -70,14 +68,12 @@
         day: '2-digit', month: 'short', year: 'numeric',
       });
     } catch (e) { return iso; }
-  }
+  };
 
-  function debounce(fn, wait) {
-    return function (...args) {
-      clearTimeout(searchDebounce);
-      searchDebounce = setTimeout(() => fn.apply(this, args), wait);
-    };
-  }
+  const maskAadhaar = (last4) => {
+    if (!last4) return 'XXXX-XXXX-XXXX';
+    return 'XXXX-XXXX-' + last4;
+  };
 
   // ============================================================
   // TOASTS
@@ -138,7 +134,7 @@
   }
 
   // ============================================================
-  // GENERIC MODAL
+  // MODAL
   // ============================================================
   function openModal(title, contentNodeOrHTML) {
     const backdrop = document.getElementById('modal-backdrop');
@@ -168,7 +164,7 @@
   }
 
   // ============================================================
-  // SESSION MANAGEMENT
+  // SESSION
   // ============================================================
   function loadSession() {
     try {
@@ -199,24 +195,15 @@
   }
 
   // ============================================================
-  // API REQUEST WRAPPER
+  // API
   // ============================================================
   async function apiRequest(endpoint, method = 'GET', data = null, isFormData = false) {
     const headers = {};
-
-    if (session && session.token) {
-      headers['Authorization'] = 'Bearer ' + session.token;
-    }
-
-    if (!isFormData) {
-      headers['Content-Type'] = 'application/json';
-    }
+    if (session && session.token) headers['Authorization'] = 'Bearer ' + session.token;
+    if (!isFormData) headers['Content-Type'] = 'application/json';
 
     const options = { method, headers };
-
-    if (data) {
-      options.body = isFormData ? data : JSON.stringify(data);
-    }
+    if (data) options.body = isFormData ? data : JSON.stringify(data);
 
     try {
       const response = await fetch(API_BASE + endpoint, options);
@@ -224,13 +211,12 @@
       if (response.status === 401) {
         clearSession();
         showScreen('login-screen');
-        return { success: false, error: 'Session expired. Please log in again.' };
+        showToast('सत्र समाप्त हो गया। पुनः लॉगिन करें।', 'error');
+        return { success: false, error: 'Session expired.' };
       }
 
       const contentType = response.headers.get('content-type') || '';
-      if (contentType.includes('application/json')) {
-        return await response.json();
-      }
+      if (contentType.includes('application/json')) return await response.json();
       return { success: response.ok };
     } catch (err) {
       console.error('API Error:', endpoint, err);
@@ -239,19 +225,14 @@
   }
 
   // ============================================================
-  // SCREEN ROUTER
+  // SCREENS
   // ============================================================
   function showScreen(screenId) {
     const screens = ['login-screen', 'twofa-screen', 'setup-screen', 'dashboard'];
     screens.forEach(id => {
       const node = document.getElementById(id);
       if (!node) return;
-      if (id === screenId) {
-        // Use flex for centered screens, block for dashboard
-        node.style.display = (id === 'dashboard') ? 'block' : 'flex';
-      } else {
-        node.style.display = 'none';
-      }
+      node.style.display = (id === screenId) ? (id === 'dashboard' ? 'block' : 'flex') : 'none';
     });
   }
 
@@ -293,18 +274,29 @@
         loginBtn.textContent = 'Checking...';
 
         try {
-          const res = await apiRequest('/login', 'POST', {
-            username: currentUsername,
-            password: password,
-          });
-
+          const res = await apiRequest('/login', 'POST', { username: currentUsername, password });
           if (res.success) {
             passwordInput.value = '';
+
+            // ============================================================
+            // STATE 1: 2FA enabled — prompt for code
+            // ============================================================
             if (res.needs_2fa) {
               showScreen('twofa-screen');
               setTimeout(() => document.getElementById('totp-code')?.focus(), 100);
+
+            // ============================================================
+            // STATE 2: 2FA disabled but token issued — log in directly
+            // ============================================================
+            } else if (res.token) {
+              saveSession(res.token, currentUsername);
+              showToast('Welcome back!', 'success');
+              openDashboard();
+
+            // ============================================================
+            // STATE 3: 2FA disabled, no token — first-time setup
+            // ============================================================
             } else {
-              // 2FA not set up yet — start wizard
               await initSetupWizard(currentUsername, password);
             }
           } else {
@@ -319,7 +311,9 @@
       });
     }
 
-    // 2FA verify form
+    // ============================================================
+    // 2FA VERIFY FORM
+    // ============================================================
     const twofaForm = document.getElementById('twofa-form');
     if (twofaForm) {
       twofaForm.addEventListener('submit', async (e) => {
@@ -331,7 +325,7 @@
         const code = codeInput.value.trim().toUpperCase().replace(/\s+/g, '');
 
         if (!code || code.length < 6) {
-          showError('twofa-error', 'कृपया 6-अंकों का कोड या backup code दर्ज करें।');
+          showError('twofa-error', 'कृपया 6-अंकों का कोड या 8-अक्षर का backup code दर्ज करें।');
           return;
         }
 
@@ -339,17 +333,17 @@
         verifyBtn.textContent = 'Verifying...';
 
         try {
-          const res = await apiRequest('/2fa/verify', 'POST', {
-            username: currentUsername,
-            code: code,
-          });
-
+          const res = await apiRequest('/2fa/verify', 'POST', { username: currentUsername, code });
           if (res.success && res.token) {
             saveSession(res.token, currentUsername);
             codeInput.value = '';
+
             if (res.used_backup_code) {
-              showToast('Logged in with backup code. It has been consumed.', 'info', 5000);
+              showToast('Logged in with backup code. This code has been consumed.', 'info', 5000);
+            } else {
+              showToast('Welcome back!', 'success');
             }
+
             openDashboard();
           } else {
             showError('twofa-error', res.error || 'Invalid code');
@@ -369,7 +363,7 @@
       clearErrors();
     });
     document.getElementById('setup-back-btn')?.addEventListener('click', () => {
-      setupSecretData = null;
+      setupSecretData = null; // Clear memory
       showScreen('login-screen');
       clearErrors();
     });
@@ -382,9 +376,7 @@
   async function performLogout(allDevices = false) {
     const ok = await confirmDialog({
       title: allDevices ? 'Log out everywhere?' : 'Log out?',
-      message: allDevices
-        ? 'This will invalidate all active sessions across all devices.'
-        : 'You will be logged out from this browser.',
+      message: allDevices ? 'Invalidates all sessions across devices.' : 'Log out from this browser.',
       okText: allDevices ? 'Log Out All' : 'Log Out',
       danger: false,
     });
@@ -392,12 +384,14 @@
 
     try { await apiRequest('/logout', 'POST'); } catch (e) {}
     clearSession();
+    setupSecretData = null;
     showScreen('login-screen');
     showToast('Logged out', 'info');
   }
 
   // ============================================================
   // 2FA SETUP WIZARD
+  // Credentials held in memory ONLY during setup flow
   // ============================================================
   async function initSetupWizard(username, password) {
     const qrContainer = document.getElementById('qr-container');
@@ -406,11 +400,22 @@
     try {
       const res = await apiRequest('/2fa/setup-init', 'POST', { username, password });
       if (res.success) {
-        setupSecretData = res;
+        // Store credentials in memory only (never in storage, never in code)
+        setupSecretData = {
+          username: username,
+          password: password,
+          secret: res.secret,
+          otpauth_url: res.otpauth_url,
+          backup_codes: res.backup_codes,
+          backup_hashes: res.backup_hashes,
+        };
+
         showScreen('setup-screen');
         renderQRCode(res.otpauth_url);
+
         const secretEl = document.getElementById('manual-secret');
         if (secretEl) secretEl.textContent = res.secret;
+
         setupWizardSteps();
       } else {
         showError('login-error', res.error || 'Failed to start 2FA setup.');
@@ -457,6 +462,7 @@
     if (step2) step2.style.display = 'none';
     if (step3) step3.style.display = 'none';
 
+    // Step 1 → Step 2
     const continueBtn = document.getElementById('setup-continue-btn');
     if (continueBtn) {
       continueBtn.onclick = () => {
@@ -466,6 +472,7 @@
       };
     }
 
+    // Step 2: verify code, enable 2FA
     const verifyBtn = document.getElementById('setup-verify-btn');
     if (verifyBtn) {
       verifyBtn.onclick = async () => {
@@ -481,13 +488,20 @@
         verifyBtn.textContent = 'Verifying...';
 
         try {
+          // Send credentials in request body (in-memory, not stored anywhere)
           const res = await apiRequest('/2fa/enable', 'POST', {
+            username: setupSecretData.username,
+            password: setupSecretData.password,
             secret: setupSecretData.secret,
             code: code,
             backup_hashes: setupSecretData.backup_hashes,
           });
 
           if (res.success) {
+            // Store token from Worker for immediate login
+            if (res.token) {
+              setupSecretData._token = res.token;
+            }
             if (step2) step2.style.display = 'none';
             if (step3) step3.style.display = 'block';
             renderBackupCodes(setupSecretData.backup_codes);
@@ -515,6 +529,7 @@
       });
     }
 
+    // Download backup codes
     const downloadBtn = document.getElementById('download-codes-btn');
     if (downloadBtn) {
       downloadBtn.onclick = () => {
@@ -522,16 +537,18 @@
           'KARNI SENA VARANASI — 2FA BACKUP CODES',
           '=========================================',
           'Generated: ' + new Date().toLocaleString('en-IN'),
-          'Username: ' + currentUsername,
+          'Username: ' + setupSecretData.username,
           '',
           'Each code can be used ONCE to log in if you lose your phone.',
+          'Keep these in a safe place. They will NOT be shown again.',
           '',
           ...codes.map((c, i) => (i + 1) + '. ' + c),
           '',
-          'Manual secret: ' + setupSecretData.secret,
+          'Manual secret (for re-entry):',
+          setupSecretData.secret,
         ].join('\n');
 
-        const blob = new Blob([text], { type: 'text/plain' });
+        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -545,19 +562,29 @@
       };
     }
 
+    // Done button — log in directly using the token from /2fa/enable
     const doneBtn = document.getElementById('setup-done-btn');
     if (doneBtn) {
       doneBtn.onclick = () => {
-        setupSecretData = null;
-        showScreen('login-screen');
-        showToast('2FA enabled! Log in with your new code.', 'success', 5000);
-        setTimeout(() => document.getElementById('totp-code')?.focus(), 200);
+        if (setupSecretData && setupSecretData._token) {
+          saveSession(setupSecretData._token, setupSecretData.username);
+          // Clear credentials from memory
+          setupSecretData = null;
+          showToast('2FA enabled successfully! Welcome to your dashboard.', 'success', 4000);
+          openDashboard();
+        } else {
+          // Fallback: go to 2FA verify screen
+          setupSecretData = null;
+          showScreen('twofa-screen');
+          showToast('2FA enabled! Please enter your code to log in.', 'success', 5000);
+          setTimeout(() => document.getElementById('totp-code')?.focus(), 200);
+        }
       };
     }
   }
 
   // ============================================================
-  // DASHBOARD ENTRY
+  // DASHBOARD
   // ============================================================
   function openDashboard() {
     showScreen('dashboard');
@@ -568,75 +595,60 @@
     check2FAStatus();
   }
 
-  async function verifyAndOpenDashboard() {
-    // Verify session is still valid by hitting a light endpoint
-    const res = await apiRequest('/stats');
-    if (res.success) {
-      openDashboard();
-    } else {
-      clearSession();
-      showScreen('login-screen');
-    }
-  }
-
-  // ============================================================
-  // TABS
-  // ============================================================
-  let tabsInitialized = false;
   function initTabs() {
     if (tabsInitialized) return;
     tabsInitialized = true;
 
     document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const tabName = btn.getAttribute('data-tab');
-        switchTab(tabName);
+      btn.addEventListener('click', () => switchTab(btn.getAttribute('data-tab')));
+    });
+
+    // Toolbar
+    document.getElementById('members-refresh')?.addEventListener('click', loadMembersList);
+    document.getElementById('member-search')?.addEventListener('input', () => {
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(loadMembersList, 300);
+    });
+    document.getElementById('member-status-filter')?.addEventListener('change', loadMembersList);
+    document.getElementById('members-export')?.addEventListener('click', exportMembersCsv);
+
+    document.getElementById('modal-close')?.addEventListener('click', closeModal);
+    document.getElementById('modal-backdrop')?.addEventListener('click', (e) => {
+      if (e.target.id === 'modal-backdrop') closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
+    });
+
+    // Add buttons (placeholder for later)
+    ['gallery-add-btn', 'slider-add-btn', 'events-add-btn', 'news-add-btn', 'ads-add-btn', 'team-add-btn'].forEach(id => {
+      document.getElementById(id)?.addEventListener('click', () => {
+        showToast('Add feature coming in the next update', 'info');
       });
     });
   }
 
   function switchTab(tabName) {
-    currentTab = tabName;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-tab') === tabName));
+    document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.toggle('active', panel.id === 'tab-' + tabName));
 
-    document.querySelectorAll('.tab-btn').forEach(b => {
-      b.classList.toggle('active', b.getAttribute('data-tab') === tabName);
-    });
-
-    document.querySelectorAll('.tab-panel').forEach(panel => {
-      panel.classList.toggle('active', panel.id === 'tab-' + tabName);
-    });
-
-    // Lazy-load data
-    switch (tabName) {
-      case 'members': loadMembersList(); break;
-      case 'gallery': loadGalleryList(); break;
-      case 'slider':  loadSliderList(); break;
-      case 'events':  loadEventsList(); break;
-      case 'news':    loadNewsList(); break;
-      case 'ads':     loadAdsList(); break;
-      case 'team':    loadTeamList(); break;
-      case 'content': loadSiteContent(); break;
-      case 'settings': check2FAStatus(); break;
-    }
+    if (tabName === 'members') loadMembersList();
+    if (tabName === 'gallery') loadGalleryList();
+    if (tabName === 'slider') loadSliderList();
+    if (tabName === 'events') loadEventsList();
+    if (tabName === 'news') loadNewsList();
+    if (tabName === 'ads') loadAdsList();
+    if (tabName === 'team') loadTeamList();
+    if (tabName === 'content') loadSiteContent();
+    if (tabName === 'settings') check2FAStatus();
   }
 
   // ============================================================
-  // DASHBOARD: STATS + ACTIVITY
+  // STATS + ACTIVITY
   // ============================================================
-  async function loadDashboardStats() {
-    const res = await apiRequest('/stats', 'GET');
-    if (res.success && res.stats) {
-      document.querySelectorAll('[data-stat]').forEach(node => {
-        const key = node.getAttribute('data-stat');
-        if (res.stats[key] !== undefined) {
-          animateCount(node, res.stats[key]);
-        }
-      });
-    }
-  }
-
   function animateCount(node, target) {
     const start = parseInt(node.textContent) || 0;
+    if (start === target) { node.textContent = String(target); return; }
     const duration = 600;
     const startTime = performance.now();
     function tick(now) {
@@ -646,6 +658,16 @@
       if (progress < 1) requestAnimationFrame(tick);
     }
     requestAnimationFrame(tick);
+  }
+
+  async function loadDashboardStats() {
+    const res = await apiRequest('/stats', 'GET');
+    if (res.success && res.stats) {
+      document.querySelectorAll('[data-stat]').forEach(node => {
+        const key = node.getAttribute('data-stat');
+        if (res.stats[key] !== undefined) animateCount(node, res.stats[key]);
+      });
+    }
   }
 
   async function loadActivityFeed() {
@@ -658,9 +680,17 @@
         feed.innerHTML = '<p class="text-muted">कोई हालिया गतिविधि नहीं।</p>';
         return;
       }
+
+      const icons = {
+        upload: '📤', delete: '🗑️', add: '➕', update: '✏️',
+        status_change: '🔄', edit: '📝', notes_update: '📓',
+        generate_card: '🎫', decrypt_aadhaar: '🔓',
+        login: '🔑', logout: '🚪', '2fa_enable': '🔐', '2fa_disable': '🔓',
+      };
+
       feed.innerHTML = res.actions.map(act => `
         <div class="activity-item">
-          <span class="activity-icon">${getActivityIcon(act.action)}</span>
+          <span class="activity-icon">${icons[act.action] || '•'}</span>
           <div class="activity-content">
             <div class="activity-text">
               <strong>${escapeHtml(act.action)}</strong>
@@ -674,17 +704,8 @@
     }
   }
 
-  function getActivityIcon(action) {
-    const icons = {
-      upload: '📤', delete: '🗑️', add: '➕', update: '✏️',
-      status_change: '🔄', edit: '📝', notes_update: '📓',
-      generate_card: '🎫', decrypt_aadhaar: '🔓',
-    };
-    return icons[action] || '•';
-  }
-
   // ============================================================
-  // MEMBERS LIST
+  // MEMBERS
   // ============================================================
   async function loadMembersList() {
     const statusFilter = document.getElementById('member-status-filter')?.value || '';
@@ -701,10 +722,8 @@
     if (searchQuery) url += '&q=' + encodeURIComponent(searchQuery);
 
     const res = await apiRequest(url, 'GET');
-
     if (res.success && res.submissions) {
       membersCache = res.submissions;
-
       if (statusEl) statusEl.style.display = 'none';
       if (tableEl) tableEl.style.display = 'table';
 
@@ -724,41 +743,32 @@
             <br><small>${escapeHtml(m.father_name || '')}</small>
           </td>
           <td class="cell-mono">${escapeHtml(m.mobile || '—')}</td>
-          <td class="cell-mono">XXXX-XXXX-${escapeHtml(m.aadhaar_last4 || '—')}</td>
+          <td class="cell-mono">${maskAadhaar(m.aadhaar_last4)}</td>
           <td class="cell-photo"></td>
           <td><span class="status-badge status-${escapeHtml(m.status || 'pending')}">${escapeHtml(m.status || 'pending')}</span></td>
           <td>${formatDateShort(m.submitted_at)}</td>
           <td>
             <div class="row-actions">
-              <button class="view-btn" title="View" type="button">👁️</button>
-              <button class="delete-btn" title="Delete" type="button">🗑️</button>
+              <button class="btn btn-small btn-outline view-btn" type="button">विवरण</button>
+              <button class="btn btn-small btn-danger delete-btn" type="button">हटाएं</button>
             </div>
           </td>
         `;
 
-        // Photo
         if (m.photo_key) {
           const img = document.createElement('img');
           img.className = 'photo-thumb';
           img.alt = m.name || '';
-          img.loading = 'lazy';
           tr.querySelector('.cell-photo').appendChild(img);
           fetchPhotoInto(img, m.photo_key);
         } else {
           tr.querySelector('.cell-photo').textContent = '—';
         }
 
-        // Actions
-        tr.querySelector('.view-btn').addEventListener('click', (e) => {
-          e.stopPropagation();
-          openMemberModal(m);
-        });
-        tr.querySelector('.delete-btn').addEventListener('click', (e) => {
-          e.stopPropagation();
-          deleteMember(m.id, m.name);
-        });
-
+        tr.querySelector('.view-btn').addEventListener('click', (e) => { e.stopPropagation(); openMemberModal(m); });
+        tr.querySelector('.delete-btn').addEventListener('click', (e) => { e.stopPropagation(); deleteMember(m.id, m.name); });
         tr.addEventListener('click', () => openMemberModal(m));
+
         tbody.appendChild(tr);
       });
     } else {
@@ -777,7 +787,6 @@
       img.className = 'detail-photo';
       img.alt = m.name || 'Photo';
       wrapper.appendChild(img);
-      // Fetch after appended
       setTimeout(() => fetchPhotoInto(img, m.photo_key), 0);
     }
 
@@ -790,7 +799,7 @@
       ['जिला', m.district || '—'],
       ['राज्य', m.state || '—'],
       ['मोबाइल', m.mobile || '—'],
-      ['आधार', 'XXXX-XXXX-' + (m.aadhaar_last4 || '—')],
+      ['आधार', maskAadhaar(m.aadhaar_last4)],
       ['अतिरिक्त', m.additional || '—'],
       ['Notes', m.notes || '—'],
       ['Status', m.status || 'pending'],
@@ -886,7 +895,7 @@
   }
 
   // ============================================================
-  // PHOTO FETCH (with auth)
+  // PHOTO FETCH
   // ============================================================
   async function fetchPhotoInto(imgEl, key) {
     if (!key || !imgEl) return;
@@ -915,7 +924,6 @@
 
     const res = await apiRequest('/gallery', 'GET');
     if (res.success && res.photos) {
-      collectionsCache.gallery = res.photos;
       grid.innerHTML = '';
 
       if (res.photos.length === 0) {
@@ -934,25 +942,12 @@
         if (p.caption) card.appendChild(el('p', 'collection-caption', p.caption));
 
         const delBtn = el('button', 'btn btn-danger btn-small', '🗑️ Delete');
-        delBtn.addEventListener('click', () => deleteGalleryItem(p.id));
+        delBtn.addEventListener('click', () => deleteCollectionItem('gallery', p.id));
         card.appendChild(delBtn);
 
         grid.appendChild(card);
         fetchPhotoInto(img, p.photo_key);
       });
-    }
-  }
-
-  async function deleteGalleryItem(id) {
-    const ok = await confirmDialog({ title: 'Delete photo?', message: 'This will remove the photo permanently.', okText: 'Delete' });
-    if (!ok) return;
-    const res = await apiRequest('/gallery/' + id + '/delete', 'DELETE');
-    if (res.success) {
-      showToast('Photo deleted', 'success');
-      loadGalleryList();
-      loadActivityFeed();
-    } else {
-      showToast('Delete failed', 'error');
     }
   }
 
@@ -965,7 +960,6 @@
 
     const res = await apiRequest('/slider', 'GET');
     if (res.success && res.slides) {
-      collectionsCache.slider = res.slides;
       grid.innerHTML = '';
 
       if (res.slides.length === 0) {
@@ -987,24 +981,12 @@
         card.appendChild(info);
 
         const delBtn = el('button', 'btn btn-danger btn-small', '🗑️ Delete');
-        delBtn.addEventListener('click', () => deleteSliderItem(s.id));
+        delBtn.addEventListener('click', () => deleteCollectionItem('slider', s.id));
         card.appendChild(delBtn);
 
         grid.appendChild(card);
         fetchPhotoInto(img, s.photo_key);
       });
-    }
-  }
-
-  async function deleteSliderItem(id) {
-    const ok = await confirmDialog({ title: 'Delete slide?', message: 'This will remove the slide permanently.', okText: 'Delete' });
-    if (!ok) return;
-    const res = await apiRequest('/slider/' + id + '/delete', 'DELETE');
-    if (res.success) {
-      showToast('Slide deleted', 'success');
-      loadSliderList();
-    } else {
-      showToast('Delete failed', 'error');
     }
   }
 
@@ -1017,7 +999,6 @@
 
     const res = await apiRequest('/events', 'GET');
     if (res.success && res.events) {
-      collectionsCache.events = res.events;
       list.innerHTML = '';
 
       if (res.events.length === 0) {
@@ -1035,21 +1016,13 @@
 
         const actions = el('div', 'collection-row-actions');
         const delBtn = el('button', 'btn btn-danger btn-small', '🗑️');
-        delBtn.addEventListener('click', () => deleteEventItem(ev.id));
+        delBtn.addEventListener('click', () => deleteCollectionItem('events', ev.id));
         actions.appendChild(delBtn);
         row.appendChild(actions);
 
         list.appendChild(row);
       });
     }
-  }
-
-  async function deleteEventItem(id) {
-    const ok = await confirmDialog({ title: 'Delete event?', message: 'This will remove the event permanently.', okText: 'Delete' });
-    if (!ok) return;
-    const res = await apiRequest('/events/' + id + '/delete', 'DELETE');
-    if (res.success) { showToast('Event deleted', 'success'); loadEventsList(); }
-    else showToast('Delete failed', 'error');
   }
 
   // ============================================================
@@ -1061,7 +1034,6 @@
 
     const res = await apiRequest('/news', 'GET');
     if (res.success && res.news) {
-      collectionsCache.news = res.news;
       list.innerHTML = '';
 
       if (res.news.length === 0) {
@@ -1079,21 +1051,13 @@
 
         const actions = el('div', 'collection-row-actions');
         const delBtn = el('button', 'btn btn-danger btn-small', '🗑️');
-        delBtn.addEventListener('click', () => deleteNewsItem(n.id));
+        delBtn.addEventListener('click', () => deleteCollectionItem('news', n.id));
         actions.appendChild(delBtn);
         row.appendChild(actions);
 
         list.appendChild(row);
       });
     }
-  }
-
-  async function deleteNewsItem(id) {
-    const ok = await confirmDialog({ title: 'Delete news item?', message: 'This will remove it permanently.', okText: 'Delete' });
-    if (!ok) return;
-    const res = await apiRequest('/news/' + id + '/delete', 'DELETE');
-    if (res.success) { showToast('News deleted', 'success'); loadNewsList(); }
-    else showToast('Delete failed', 'error');
   }
 
   // ============================================================
@@ -1105,7 +1069,6 @@
 
     const res = await apiRequest('/ads', 'GET');
     if (res.success && res.ads) {
-      collectionsCache.ads = res.ads;
       list.innerHTML = '';
 
       if (res.ads.length === 0) {
@@ -1123,21 +1086,13 @@
 
         const actions = el('div', 'collection-row-actions');
         const delBtn = el('button', 'btn btn-danger btn-small', '🗑️');
-        delBtn.addEventListener('click', () => deleteAdItem(a.id));
+        delBtn.addEventListener('click', () => deleteCollectionItem('ads', a.id));
         actions.appendChild(delBtn);
         row.appendChild(actions);
 
         list.appendChild(row);
       });
     }
-  }
-
-  async function deleteAdItem(id) {
-    const ok = await confirmDialog({ title: 'Delete advertisement?', message: 'This will remove it permanently.', okText: 'Delete' });
-    if (!ok) return;
-    const res = await apiRequest('/ads/' + id + '/delete', 'DELETE');
-    if (res.success) { showToast('Ad deleted', 'success'); loadAdsList(); }
-    else showToast('Delete failed', 'error');
   }
 
   // ============================================================
@@ -1149,7 +1104,6 @@
 
     const res = await apiRequest('/team', 'GET');
     if (res.success && res.members) {
-      collectionsCache.team = res.members;
       grid.innerHTML = '';
 
       if (res.members.length === 0) {
@@ -1160,6 +1114,7 @@
       res.members.forEach(t => {
         const card = el('div', 'collection-card team-card-admin');
         const imgWrap = el('div', 'collection-image');
+
         if (t.photo_key) {
           const img = document.createElement('img');
           img.alt = t.name || '';
@@ -1177,7 +1132,7 @@
         card.appendChild(info);
 
         const delBtn = el('button', 'btn btn-danger btn-small', '🗑️ Delete');
-        delBtn.addEventListener('click', () => deleteTeamMember(t.id));
+        delBtn.addEventListener('click', () => deleteCollectionItem('team', t.id));
         card.appendChild(delBtn);
 
         grid.appendChild(card);
@@ -1185,16 +1140,44 @@
     }
   }
 
-  async function deleteTeamMember(id) {
-    const ok = await confirmDialog({ title: 'Delete team member?', message: 'This will remove them from the site.', okText: 'Delete' });
+  // ============================================================
+  // GENERIC DELETE
+  // ============================================================
+  async function deleteCollectionItem(type, id) {
+    const ok = await confirmDialog({
+      title: 'Delete item?',
+      message: 'This cannot be undone.',
+      okText: 'Delete',
+      danger: true,
+    });
     if (!ok) return;
-    const res = await apiRequest('/team/' + id + '/delete', 'DELETE');
-    if (res.success) { showToast('Team member deleted', 'success'); loadTeamList(); }
-    else showToast('Delete failed', 'error');
+
+    const endpoints = {
+      gallery: '/gallery/' + id + '/delete',
+      slider: '/slider/' + id + '/delete',
+      events: '/events/' + id + '/delete',
+      news: '/news/' + id + '/delete',
+      ads: '/ads/' + id + '/delete',
+      team: '/team/' + id + '/delete',
+    };
+
+    const res = await apiRequest(endpoints[type], 'DELETE');
+    if (res.success) {
+      showToast('Deleted successfully', 'success');
+      if (type === 'gallery') loadGalleryList();
+      if (type === 'slider') loadSliderList();
+      if (type === 'events') loadEventsList();
+      if (type === 'news') loadNewsList();
+      if (type === 'ads') loadAdsList();
+      if (type === 'team') loadTeamList();
+      loadActivityFeed();
+    } else {
+      showToast('Delete failed: ' + (res.error || 'Unknown error'), 'error');
+    }
   }
 
   // ============================================================
-  // CONTENT (Site text)
+  // CONTENT
   // ============================================================
   async function loadSiteContent() {
     const editor = document.getElementById('content-editor');
@@ -1214,7 +1197,7 @@
           <input type="text" id="c-org-tagline" value="${escapeHtml(contentCache.org?.topbar || '')}">
         </div>
         <div class="content-field">
-          <label>About Section Text</label>
+          <label>About Section Description</label>
           <textarea id="c-about" rows="4">${escapeHtml(contentCache.about?.description || '')}</textarea>
         </div>
         <div class="content-actions">
@@ -1243,12 +1226,12 @@
       showToast('Content saved', 'success');
       loadActivityFeed();
     } else {
-      showToast('Save failed', 'error');
+      showToast('Save failed: ' + (res.error || 'Unknown error'), 'error');
     }
   }
 
   // ============================================================
-  // SETTINGS: 2FA STATUS
+  // 2FA STATUS
   // ============================================================
   async function check2FAStatus() {
     const statusText = document.getElementById('2fa-status-text');
@@ -1258,32 +1241,6 @@
     if (res.success) {
       statusText.textContent = res.enabled ? '2FA is enabled ✅' : '2FA is not enabled ⚠️';
     }
-  }
-
-  // ============================================================
-  // WIRE UP TOOLBAR BUTTONS
-  // ============================================================
-  function initToolbar() {
-    document.getElementById('members-refresh')?.addEventListener('click', loadMembersList);
-    document.getElementById('member-search')?.addEventListener('input', debounce(loadMembersList, 300));
-    document.getElementById('member-status-filter')?.addEventListener('change', loadMembersList);
-    document.getElementById('members-export')?.addEventListener('click', exportMembersCsv);
-
-    document.getElementById('gallery-add-btn')?.addEventListener('click', () => showToast('Add photo — coming next step', 'info'));
-    document.getElementById('slider-add-btn')?.addEventListener('click', () => showToast('Add slide — coming next step', 'info'));
-    document.getElementById('events-add-btn')?.addEventListener('click', () => showToast('Add event — coming next step', 'info'));
-    document.getElementById('news-add-btn')?.addEventListener('click', () => showToast('Add news — coming next step', 'info'));
-    document.getElementById('ads-add-btn')?.addEventListener('click', () => showToast('Add ad — coming next step', 'info'));
-    document.getElementById('team-add-btn')?.addEventListener('click', () => showToast('Add team member — coming next step', 'info'));
-
-    document.getElementById('modal-close')?.addEventListener('click', closeModal);
-    document.getElementById('modal-backdrop')?.addEventListener('click', (e) => {
-      if (e.target.id === 'modal-backdrop') closeModal();
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeModal();
-    });
   }
 
   // ============================================================
@@ -1322,23 +1279,26 @@
   }
 
   // ============================================================
-  // INITIALIZATION
+  // INIT
   // ============================================================
   document.addEventListener('DOMContentLoaded', () => {
     loadSession();
     initLoginFlow();
-    initToolbar();
+    initTabs(); // Wire up toolbar buttons even before login
 
     if (session && session.token) {
-      verifyAndOpenDashboard();
+      // Verify session is still valid
+      apiRequest('/stats').then(res => {
+        if (res.success) {
+          openDashboard();
+        } else {
+          clearSession();
+          showScreen('login-screen');
+        }
+      });
     } else {
       showScreen('login-screen');
     }
   });
-
-  // ============================================================
-  // EXPORT GLOBAL HELPERS (for inline onclick if needed)
-  // ============================================================
-  window.deleteMember = deleteMember;
 
 })();
