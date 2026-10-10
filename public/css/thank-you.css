@@ -512,4 +512,145 @@ body {
     .om-bg-3 {
         animation: none;
     }
+
+/* ============================================================
+   MEMBER ID BOX
+   ============================================================ */
+.member-id-box {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 0.9rem 1.6rem;
+    background: linear-gradient(135deg, rgba(232, 122, 30, 0.12) 0%, rgba(212, 175, 55, 0.08) 100%);
+    border: 1px solid rgba(232, 122, 30, 0.45);
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    animation: fadeUp 0.7s ease-out 1.1s both;
 }
+
+.member-id-label {
+    font-family: var(--font-hi);
+    font-size: 0.72rem;
+    color: rgba(255, 248, 231, 0.7);
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+}
+
+.member-id-value {
+    font-family: 'SF Mono', 'Courier New', monospace;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 2px;
+}
+
+/* ============================================================
+   CARD DOWNLOAD SECTION
+   ============================================================ */
+.card-download-section {
+    background:
+        radial-gradient(circle at 50% 0%, rgba(232, 122, 30, 0.15), transparent 70%),
+        linear-gradient(180deg, rgba(61, 15, 15, 0.5) 0%, rgba(30, 10, 10, 0.6) 100%);
+    border: 1px solid rgba(212, 175, 55, 0.35);
+    border-radius: 16px;
+    padding: 1.8rem 1.4rem;
+    margin: 1.5rem 0;
+    text-align: center;
+    animation: fadeUp 0.8s ease-out 1.2s both;
+}
+
+.card-download-icon {
+    font-size: 3rem;
+    margin-bottom: 0.6rem;
+    line-height: 1;
+    filter: drop-shadow(0 0 12px rgba(232, 122, 30, 0.5));
+}
+
+.card-download-title {
+    font-family: var(--font-hi);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--gold);
+    margin-bottom: 0.5rem;
+    line-height: 1.35;
+}
+
+.card-download-sub {
+    font-family: var(--font-hi);
+    font-size: 0.9rem;
+    color: rgba(255, 248, 231, 0.8);
+    line-height: 1.65;
+    max-width: 480px;
+    margin: 0 auto 1.3rem;
+}
+
+.btn-card-download {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    padding: 1rem 2rem;
+    background: linear-gradient(135deg, var(--saffron) 0%, var(--saffron-light) 100%);
+    color: #FFFFFF;
+    border-radius: 999px;
+    font-family: var(--font-hi);
+    font-weight: 700;
+    font-size: 1rem;
+    text-decoration: none;
+    box-shadow:
+        0 8px 24px rgba(232, 122, 30, 0.45),
+        0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+    transition: all 0.25s ease;
+    margin-bottom: 1rem;
+    min-width: 260px;
+    cursor: pointer;
+}
+
+.btn-card-download small {
+    font-family: var(--font-en);
+    font-size: 0.72rem;
+    font-weight: 500;
+    opacity: 0.9;
+    letter-spacing: 0.4px;
+}
+
+.btn-card-download:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        0 14px 36px rgba(232, 122, 30, 0.6),
+        0 0 0 1px rgba(255, 255, 255, 0.25) inset;
+}
+
+.btn-card-download:active {
+    transform: translateY(0);
+}
+
+.card-download-note {
+    font-family: var(--font-hi);
+    font-size: 0.78rem;
+    color: rgba(255, 248, 231, 0.65);
+    line-height: 1.7;
+    margin-top: 0.8rem;
+}
+
+.card-download-note span {
+    font-family: var(--font-en);
+    font-size: 0.72rem;
+    opacity: 0.85;
+}
+
+@media (max-width: 480px) {
+    .card-download-section {
+        padding: 1.4rem 1rem;
+    }
+    .btn-card-download {
+        width: 100%;
+        min-width: auto;
+        padding: 0.95rem 1.2rem;
+    }
+    .member-id-value {
+        font-size: 1rem;
+        letter-spacing: 1.5px;
+    }
+}}
