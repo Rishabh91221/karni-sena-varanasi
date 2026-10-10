@@ -328,10 +328,10 @@ body {
   min-height: 0;
 }
 
+/* === FIX 1: Photo stays at normal size === */
 .card-photo {
   width: 78px;
   height: 104px;
-  aspect-ratio: 3 / 4;
   border-radius: 6px;
   background: var(--cream-dark);
   overflow: hidden;
@@ -340,6 +340,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .card-photo img {
@@ -432,21 +433,24 @@ body {
   line-height: 1;
 }
 
+/* === FIX 3: Member ID fits one line === */
 .card-id-box strong {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 6px;
   font-weight: 700;
   color: #FFE4A0;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.15px;
   text-shadow: 0 1px 3px rgba(0,0,0,0.6);
   line-height: 1.1;
   white-space: nowrap;
 }
 
+/* === FIX 2: QR aligned to top === */
 .card-qr {
   display: flex;
   flex-direction: column;
   align-items: center;
+  align-self: start;
   gap: 3px;
 }
 
@@ -670,16 +674,22 @@ body {
   align-items: start;
 }
 
+/* === FIX 4: Back QR constrained so it doesn't overlap footer === */
 .back-qr-col {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  justify-content: flex-start;
+  align-self: start;
+  gap: 3px;
+  max-height: 100%;
+  overflow: hidden;
 }
 
+/* === FIX 5: Back QR smaller === */
 .back-qr-col img {
-  width: 50px;
-  height: 50px;
+  width: 44px;
+  height: 44px;
   background: var(--cream);
   padding: 2px;
   border-radius: 4px;
@@ -831,7 +841,8 @@ body {
   .card-member-title span { font-size: 8px; }
   .card-id-box { padding: 4px 8px; }
   .card-id-box small { font-size: 5.5px; }
-  .card-id-box strong { font-size: 11px; }
+  /* === FIX 6: Mobile ID font === */
+  .card-id-box strong { font-size: 5.5px; }
   .card-qr img { width: 62px; height: 62px; }
   .card-qr small { font-size: 5px; }
   .card-qr small span { font-size: 6.5px; }
@@ -850,7 +861,8 @@ body {
   .back-section p { font-size: 7px; }
   .back-section h4 { font-size: 6px; }
   .back-section h4 span { font-size: 7px; }
-  .back-qr-col img { width: 55px; height: 55px; }
+  /* === FIX 7: Mobile back QR smaller === */
+  .back-qr-col img { width: 44px; height: 44px; }
 
   .back-verification strong { font-size: 10px; }
   .back-signature { font-size: 6.5px; }
@@ -916,4 +928,41 @@ body {
 
   .card::after { animation: none !important; }
   .hologram { animation: none !important; }
+
+  /* === FIX 8: Print-side sizing for physical ID-1 card === */
+  .card-content { padding: 2.5mm 3.5mm !important; gap: 1.2mm !important; }
+  .card-header { padding-bottom: 1mm !important; }
+  .card-header-logo { width: 5.5mm !important; height: 5.5mm !important; }
+  .card-header-text strong { font-size: 3mm !important; }
+  .card-header-text small { font-size: 1.9mm !important; }
+  .card-header-title { font-size: 1.3mm !important; }
+  .card-header-title span { font-size: 1.6mm !important; }
+
+  .card-body { grid-template-columns: 13mm 1fr 13mm !important; gap: 1.8mm !important; }
+  .card-photo { width: 13mm !important; height: 17mm !important; }
+
+  .card-name { font-size: 3.4mm !important; line-height: 1.1 !important; }
+  .card-father { font-size: 2.2mm !important; }
+  .card-member-title { font-size: 1.3mm !important; }
+  .card-member-title span { font-size: 1.6mm !important; }
+
+  .card-id-box { padding: 0.6mm 1.4mm !important; gap: 0.1mm !important; margin-top: 0.5mm !important; }
+  .card-id-box small { font-size: 1.1mm !important; letter-spacing: 0.1mm !important; }
+  .card-id-box strong { font-size: 1.8mm !important; letter-spacing: 0 !important; white-space: nowrap !important; }
+
+  .card-qr img { width: 12mm !important; height: 12mm !important; padding: 0.4mm !important; }
+  .card-qr small { font-size: 1mm !important; }
+  .card-qr small span { font-size: 1.2mm !important; }
+  .card-qr { align-self: start !important; }
+
+  .card-watermark { font-size: 6mm !important; }
+
+  .card-footer { padding-top: 0.8mm !important; gap: 1.5mm !important; }
+  .card-meta-row { gap: 0.8mm !important; }
+  .card-meta-item small { font-size: 1mm !important; }
+  .card-meta-item strong { font-size: 1.7mm !important; }
+  .card-meta-item strong.en { font-size: 1.6mm !important; }
+  .hologram { width: 6mm !important; height: 6mm !important; font-size: 2.4mm !important; }
+
+  .microtext { font-size: 1mm !important; }
 }
