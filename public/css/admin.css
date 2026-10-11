@@ -1,5 +1,5 @@
 /* ============================================================
-   KARNI SENA VARANASI — Admin Panel Styles v4.0
+   KARNI SENA VARANASI — Admin Panel Styles v5.0
    ============================================================ */
 
 /* ============================================================
@@ -112,7 +112,7 @@ img {
 }
 
 /* ============================================================
-   BUTTONS (global)
+   BUTTONS
    ============================================================ */
 .btn {
     display: inline-flex;
@@ -140,6 +140,12 @@ img {
     background: var(--saffron-light);
     transform: translateY(-1px);
     box-shadow: 0 6px 16px rgba(232, 122, 30, 0.4);
+}
+
+.btn-primary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
 }
 
 .btn-outline {
@@ -174,11 +180,13 @@ img {
 }
 
 .btn-text {
-    padding: 0.5rem 0.8rem;
+    padding: 0.4rem 0.6rem;
     color: var(--text-muted);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     border-radius: var(--radius);
     transition: all 0.2s ease;
+    background: transparent;
+    font-weight: 500;
 }
 
 .btn-text:hover {
@@ -187,7 +195,7 @@ img {
 }
 
 /* ============================================================
-   LOGIN SCREEN (shared by login, 2FA, setup)
+   LOGIN / 2FA / SETUP SCREENS
    ============================================================ */
 .login-screen {
     min-height: 100vh;
@@ -279,6 +287,7 @@ img {
 .field textarea {
     resize: vertical;
     min-height: 90px;
+    font-family: inherit;
 }
 
 .field .hint {
@@ -289,7 +298,6 @@ img {
     line-height: 1.5;
 }
 
-/* TOTP code input — large monospace */
 .totp-input {
     font-family: 'SF Mono', Menlo, Consolas, monospace;
     font-size: 1.6rem !important;
@@ -431,6 +439,9 @@ img {
     font-size: 0.78rem;
     font-weight: 600;
     transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
 }
 
 .copy-btn:hover {
@@ -600,10 +611,7 @@ img {
     scrollbar-width: thin;
 }
 
-.admin-tabs::-webkit-scrollbar {
-    height: 4px;
-}
-
+.admin-tabs::-webkit-scrollbar { height: 4px; }
 .admin-tabs::-webkit-scrollbar-thumb {
     background: var(--border);
     border-radius: 2px;
@@ -806,19 +814,6 @@ img {
     color: var(--text-muted);
 }
 
-.skeleton-row {
-    height: 60px;
-    background: linear-gradient(90deg, var(--gray-100) 25%, var(--gray-200) 50%, var(--gray-100) 75%);
-    background-size: 200% 100%;
-    border-radius: var(--radius);
-    animation: skeleton 1.5s ease-in-out infinite;
-}
-
-@keyframes skeleton {
-    from { background-position: 200% 0; }
-    to   { background-position: -200% 0; }
-}
-
 /* ============================================================
    TOOLBAR
    ============================================================ */
@@ -923,9 +918,7 @@ img {
     border-bottom: none;
 }
 
-.cell-photo {
-    width: 50px;
-}
+.cell-photo { width: 50px; }
 
 .photo-thumb {
     width: 42px;
@@ -976,7 +969,6 @@ img {
     color: var(--red-text);
 }
 
-/* Row actions */
 .row-actions {
     display: flex;
     gap: 0.3rem;
@@ -992,12 +984,12 @@ img {
    ============================================================ */
 .collection-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 1rem;
 }
 
 .collection-grid-wide {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 }
 
 .collection-card {
@@ -1024,6 +1016,7 @@ img {
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
 }
 
 .collection-image img {
@@ -1066,8 +1059,18 @@ img {
     line-height: 1.5;
 }
 
-.collection-card > .btn {
-    margin: 0 1rem 1rem;
+/* NEW: action buttons on cards */
+.collection-actions {
+    display: flex;
+    gap: 0.4rem;
+    padding: 0 1rem 1rem;
+    margin-top: auto;
+}
+
+.collection-actions .btn {
+    flex: 1;
+    padding: 0.5rem;
+    font-size: 0.8rem;
 }
 
 .collection-empty {
@@ -1136,7 +1139,243 @@ img {
 }
 
 /* ============================================================
-   CONTENT EDITOR
+   FORM MODAL SYSTEM (NEW)
+   ============================================================ */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.form-field {
+    margin-bottom: 1rem;
+    min-width: 0;
+}
+
+.form-field label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+}
+
+.form-field input,
+.form-field textarea,
+.form-field select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--white);
+    color: var(--text);
+    font-size: 0.92rem;
+    font-family: inherit;
+    transition: all 0.2s ease;
+}
+
+.form-field input:focus,
+.form-field textarea:focus,
+.form-field select:focus {
+    border-color: var(--saffron);
+    box-shadow: 0 0 0 4px rgba(232, 122, 30, 0.12);
+}
+
+.form-field textarea {
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.5;
+}
+
+.form-field input[type="number"] {
+    font-family: 'SF Mono', Menlo, monospace;
+}
+
+.form-field-check {
+    padding: 0.6rem 0;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.92rem;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--saffron);
+    cursor: pointer;
+    margin: 0;
+}
+
+/* ============================================================
+   IMAGE UPLOAD (NEW)
+   ============================================================ */
+.image-upload-zone {
+    position: relative;
+    border: 2px dashed var(--saffron);
+    border-radius: var(--radius);
+    background: var(--cream);
+    padding: 1rem;
+    min-height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    overflow: hidden;
+}
+
+.image-upload-zone:hover {
+    background: var(--cream-dark);
+    border-color: var(--saffron-dark);
+}
+
+.image-upload-preview {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--white);
+}
+
+.image-upload-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: calc(var(--radius) - 2px);
+}
+
+.image-upload-preview:empty {
+    display: none;
+}
+
+.image-upload-hint {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    color: var(--text-muted);
+    text-align: center;
+    pointer-events: none;
+}
+
+.image-upload-hint .upload-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.image-upload-hint span {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--maroon);
+}
+
+.image-upload-hint small {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.image-remove-btn {
+    display: inline-block;
+    font-size: 0.8rem;
+    color: var(--red-text);
+    padding: 0.3rem 0.6rem;
+    border-radius: 6px;
+    transition: background-color 0.15s ease;
+}
+
+.image-remove-btn:hover {
+    background: var(--red-bg);
+}
+
+/* ============================================================
+   CARD LINK MODAL (NEW)
+   ============================================================ */
+.card-link-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    padding: 1rem;
+    background: var(--cream);
+    border-radius: var(--radius);
+    margin-bottom: 1.2rem;
+}
+
+.card-link-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.card-link-row small {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.card-link-row strong {
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 0.95rem;
+    color: var(--maroon);
+    word-break: break-all;
+    text-align: right;
+}
+
+.card-link-url-box {
+    margin-bottom: 1rem;
+}
+
+.card-link-url-box label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.copy-field {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+}
+
+.copy-field input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--white);
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 0.8rem;
+    color: var(--text);
+    min-width: 0;
+    word-break: break-all;
+}
+
+.copy-field input:focus {
+    border-color: var(--saffron);
+    box-shadow: 0 0 0 3px rgba(232, 122, 30, 0.1);
+}
+
+.copy-field .copy-btn {
+    padding: 0.75rem 1rem;
+    flex-shrink: 0;
+}
+
+/* ============================================================
+   CONTENT EDITOR (NEW sections)
    ============================================================ */
 .content-editor {
     background: var(--white);
@@ -1145,8 +1384,26 @@ img {
     padding: 1.5rem;
 }
 
-.content-field {
+.content-section {
+    padding-bottom: 1.2rem;
     margin-bottom: 1.2rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.content-section:last-of-type {
+    border-bottom: none;
+    margin-bottom: 0.5rem;
+}
+
+.content-section-title {
+    font-family: var(--font-hi);
+    font-size: 1.05rem;
+    color: var(--maroon);
+    margin-bottom: 1rem;
+}
+
+.content-field {
+    margin-bottom: 1rem;
 }
 
 .content-field label {
@@ -1178,6 +1435,7 @@ img {
 .content-field textarea {
     resize: vertical;
     min-height: 100px;
+    font-family: inherit;
 }
 
 .content-actions {
@@ -1238,7 +1496,7 @@ img {
 }
 
 /* ============================================================
-   MODAL
+   MODALS
    ============================================================ */
 .modal-backdrop {
     position: fixed;
@@ -1430,17 +1688,9 @@ img {
     transform: translateX(0);
 }
 
-.toast-success {
-    border-left-color: var(--green);
-}
-
-.toast-error {
-    border-left-color: var(--red);
-}
-
-.toast-info {
-    border-left-color: var(--blue);
-}
+.toast-success { border-left-color: var(--green); }
+.toast-error   { border-left-color: var(--red); }
+.toast-info    { border-left-color: var(--blue); }
 
 .toast-icon {
     font-size: 1rem;
@@ -1458,54 +1708,34 @@ img {
    RESPONSIVE
    ============================================================ */
 @media (max-width: 768px) {
-    .admin-main {
-        padding: 1.2rem 1rem 3rem;
-    }
+    .admin-main { padding: 1.2rem 1rem 3rem; }
+    .panel-title { font-size: 1.3rem; }
 
-    .panel-title {
-        font-size: 1.3rem;
-    }
-
-    .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .stat-value {
-        font-size: 1.8rem;
-    }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .stat-value { font-size: 1.8rem; }
 
     .toolbar {
         flex-direction: column;
         align-items: stretch;
     }
-
-    .toolbar-left,
-    .toolbar-right {
-        justify-content: stretch;
-    }
-
+    .toolbar-left, .toolbar-right { justify-content: stretch; }
     .toolbar input[type="search"],
-    .toolbar select {
-        flex: 1;
-        min-width: 0;
-    }
+    .toolbar select { flex: 1; min-width: 0; }
 
     .detail-grid {
         grid-template-columns: 1fr;
         gap: 0.2rem;
     }
+    .detail-grid dt { margin-top: 0.6rem; }
 
-    .detail-grid dt {
-        margin-top: 0.6rem;
-    }
+    .modal-body { padding: 1.2rem; }
 
-    .modal-body {
-        padding: 1.2rem;
-    }
+    .backup-codes { grid-template-columns: 1fr; }
 
-    .backup-codes {
-        grid-template-columns: 1fr;
-    }
+    .form-row { grid-template-columns: 1fr; gap: 0; }
+
+    .copy-field { flex-direction: column; }
+    .copy-field .copy-btn { align-self: stretch; }
 
     .toast-container {
         top: auto;
@@ -1514,80 +1744,42 @@ img {
         left: 1rem;
         max-width: none;
     }
-
-    .toast {
-        transform: translateY(20px);
-    }
-
-    .toast.toast-show {
-        transform: translateY(0);
-    }
-}
-
-@media (max-width: 480px) {
-    .admin-header {
-        padding: 0.7rem 1rem;
-    }
-
-    .admin-header strong {
-        font-size: 0.9rem;
-    }
-
-    .admin-header small {
-        display: none;
-    }
-
-    .admin-logo {
-        width: 36px;
-        height: 36px;
-    }
-
-    .admin-tabs {
-        padding: 0.6rem 1rem;
-        top: 55px;
-    }
-
-    .tab-label {
-        display: none;
-    }
-
-    .tab-btn {
-        padding: 0.5rem 0.7rem;
-    }
-
-    .tab-icon {
-        font-size: 1.2rem;
-    }
-
-    .stat-value {
-        font-size: 1.5rem;
-    }
-
-    .login-card {
-        padding: 2rem 1.5rem;
-    }
-
-    .collection-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
+    .toast { transform: translateY(20px); }
+    .toast.toast-show { transform: translateY(0); }
 
     .collection-row {
         flex-direction: column;
         align-items: stretch;
     }
+    .collection-row-actions { justify-content: flex-end; }
+}
 
-    .collection-row-actions {
-        justify-content: flex-end;
-    }
+@media (max-width: 480px) {
+    .admin-header { padding: 0.7rem 1rem; }
+    .admin-header strong { font-size: 0.9rem; }
+    .admin-header small { display: none; }
+    .admin-logo { width: 36px; height: 36px; }
+
+    .admin-tabs { padding: 0.6rem 1rem; top: 55px; }
+    .tab-label { display: none; }
+    .tab-btn { padding: 0.5rem 0.7rem; }
+    .tab-icon { font-size: 1.2rem; }
+
+    .stat-value { font-size: 1.5rem; }
+
+    .login-card { padding: 2rem 1.5rem; }
+
+    .collection-grid { grid-template-columns: repeat(2, 1fr); }
+
+    .modal-actions { flex-direction: column; }
+    .modal-actions .btn { width: 100%; }
 }
 
 /* ============================================================
    REDUCED MOTION
    ============================================================ */
 @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
+    *, *::before, *::after {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
