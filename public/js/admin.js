@@ -1,18 +1,6 @@
 /* ============================================================
-   KARNI SENA VARANASI — Admin Panel v7.0
-   Matches Worker v7.0 auth flow
-   ------------------------------------------------------------
-   Flow:
-   1. Login (username + password [+ setup_key])
-      - needs_2fa: false → setup_required → show wizard
-      - needs_2fa: true  → 2FA challenge → verify → dashboard
-   2. Setup wizard:
-      - POST /admin/2fa/setup with Bearer(setup-token)
-      - Show QR + backup codes
-      - POST /admin/2fa/enable with code → full session
-   3. Full session:
-      - POST /admin/stepup before decrypt/delete
-      - All other actions use Bearer(full-token)
+   KARNI SENA VARANASI — Admin Panel v7.1
+   Full CMS + Card Link + Member Management
    ============================================================ */
 
 (function () {
@@ -26,11 +14,10 @@
   const STORE_SETUP_KEY = 'ksv_setup_key';
 
   // ============ STATE ============
-  let auth = null;              // { token, user, scope, elevatedUntil }
+  let auth = null;
   let setupKey = '';
-  let pendingSetup = null;      // { secret, otpauth_url, backup_codes }
+  let pendingSetup = null;
   let challengeToken = null;
-  let decryptCache = {};
   let currentTab = 'dashboard';
   let membersCache = [];
   let searchDebounce = null;
@@ -79,6 +66,8 @@
   function maskAadhaar(last4) {
     return last4 ? 'XXXX-XXXX-' + last4 : 'XXXX-XXXX-XXXX';
   }
+
+  function todayISO() { return new Date().toISOString().slice(0, 10); }
 
   // ============ TOASTS ============
   function toast(msg, type, ms) {
@@ -130,7 +119,7 @@
     });
   }
 
-  // ============ GENERIC MODAL ============
+  // ============ MODAL ============
   function openModal(title, node) {
     const bd = $('#modal-backdrop');
     const body = $('#modal-body');
@@ -186,7 +175,7 @@
     } catch (e) {}
   }
 
-  // ============ API REQUEST ============
+  // ============ API ============
   async function api(path, opts) {
     opts = opts || {};
     const headers = Object.assign({}, opts.headers || {});
@@ -207,7 +196,6 @@
       else data = { success: res.ok };
     } catch (e) { data = {}; }
 
-    // Handle auth errors
     if (res.status === 401) {
       const code = data.code;
       if (code === 'session_expired') {
@@ -242,7 +230,7 @@
     });
   }
 
-  // ============ LOGIN FLOW ============
+  // ============ LOGIN ============
   function initLogin() {
     const form = document.getElementById('login-form');
     if (form) {
@@ -278,8 +266,6 @@
 
           if (!r.ok || !r.data.success) {
             showError('login-error', r.data.error || 'Login failed');
-
-            // If setup key required, show the input
             if (r.data.code === 'setup_key_required') {
               const wrap = document.getElementById('setup-key-wrap');
               if (wrap) wrap.style.display = 'block';
@@ -289,9 +275,7 @@
             return;
           }
 
-          // Success — check next step
           if (r.data.needs_2fa) {
-            // 2FA challenge
             challengeToken = r.data.challenge;
             showScreen('twofa-screen');
             setTimeout(() => document.getElementById('totp-code')?.focus(), 100);
@@ -299,13 +283,7 @@
           }
 
           if (r.data.setup_required) {
-            // Setup scope — need to run wizard
-            saveAuth({
-              token: r.data.token,
-              user: username,
-              scope: 'setup',
-              elevatedUntil: 0,
-            });
+            saveAuth({ token: r.data.token, user: username, scope: 'setup', elevatedUntil: 0 });
             await startSetupWizard();
             return;
           }
@@ -318,7 +296,6 @@
       });
     }
 
-    // 2FA verify form
     const twofaForm = document.getElementById('twofa-form');
     if (twofaForm) {
       twofaForm.addEventListener('submit', async (e) => {
@@ -354,7 +331,6 @@
             elevatedUntil: Math.floor(Date.now() / 1000) + 300,
           });
 
-          // fetch session info for correct user
           const info = await api('/session');
           if (info.ok && info.data.success) {
             auth.user = info.data.user;
@@ -373,7 +349,6 @@
       });
     }
 
-    // Back buttons
     document.getElementById('twofa-back')?.addEventListener('click', () => {
       challengeToken = null;
       showScreen('login-screen');
@@ -387,7 +362,6 @@
       clearErrors();
     });
 
-    // Logout buttons
     document.getElementById('logout-btn')?.addEventListener('click', () => logout(false));
     document.getElementById('logout-all-btn')?.addEventListener('click', () => logout(true));
   }
@@ -401,9 +375,7 @@
     });
     if (!ok) return;
 
-    try {
-      await api(allDevices ? '/logout-all' : '/logout', { method: 'POST' });
-    } catch (e) {}
+    try { await api(allDevices ? '/logout-all' : '/logout', { method: 'POST' }); } catch (e) {}
     clearAuth();
     challengeToken = null;
     pendingSetup = null;
@@ -411,7 +383,7 @@
     toast('Logged out', 'info');
   }
 
-  // ============ 2FA SETUP WIZARD ============
+  // ============ 2FA WIZARD ============
   async function startSetupWizard() {
     const qrBox = document.getElementById('qr-container');
     if (qrBox) qrBox.innerHTML = '<div class="spinner">Generating secret...</div>';
@@ -436,7 +408,6 @@
     const sec = document.getElementById('manual-secret');
     if (sec) sec.textContent = pendingSetup.secret;
 
-    // Wizard steps
     const step1 = document.getElementById('setup-step-1');
     const step2 = document.getElementById('setup-step-2');
     const step3 = document.getElementById('setup-step-3');
@@ -480,7 +451,6 @@
           elevatedUntil: Math.floor(Date.now() / 1000) + 300,
         });
 
-        // Fetch correct user info
         const info = await api('/session');
         if (info.ok && info.data.success) {
           auth.user = info.data.user;
@@ -574,9 +544,7 @@
     return new Promise(resolve => {
       const wrap = document.createElement('div');
       wrap.innerHTML = `
-        <p class="text-muted" style="margin-bottom:1rem">
-          This action requires a fresh 2FA code for security.
-        </p>
+        <p class="text-muted" style="margin-bottom:1rem">This action requires a fresh 2FA code for security.</p>
         <div class="field">
           <label for="stepup-code">2FA Code</label>
           <input type="text" id="stepup-code" placeholder="000000" maxlength="6" inputmode="numeric" class="totp-input">
@@ -639,7 +607,6 @@
       btn.addEventListener('click', () => switchTab(btn.dataset.tab));
     });
 
-    // Members toolbar
     document.getElementById('members-refresh')?.addEventListener('click', loadMembers);
     document.getElementById('member-search')?.addEventListener('input', () => {
       clearTimeout(searchDebounce);
@@ -648,7 +615,6 @@
     document.getElementById('member-status-filter')?.addEventListener('change', loadMembers);
     document.getElementById('members-export')?.addEventListener('click', exportCsv);
 
-    // Modal close
     document.getElementById('modal-close')?.addEventListener('click', closeModal);
     document.getElementById('modal-backdrop')?.addEventListener('click', e => {
       if (e.target.id === 'modal-backdrop') closeModal();
@@ -657,13 +623,12 @@
       if (e.key === 'Escape' && currentModal) closeModal();
     });
 
-    // Placeholder buttons for add
-    ['gallery-add-btn', 'slider-add-btn', 'events-add-btn',
-     'news-add-btn', 'ads-add-btn', 'team-add-btn'].forEach(id => {
-      document.getElementById(id)?.addEventListener('click', () => {
-        toast('Add feature coming in the next update', 'info');
-      });
-    });
+    document.getElementById('slider-add-btn')?.addEventListener('click', () => openSliderForm());
+    document.getElementById('gallery-add-btn')?.addEventListener('click', () => openGalleryForm());
+    document.getElementById('events-add-btn')?.addEventListener('click', () => openEventForm());
+    document.getElementById('news-add-btn')?.addEventListener('click', () => openNewsForm());
+    document.getElementById('ads-add-btn')?.addEventListener('click', () => openAdsForm());
+    document.getElementById('team-add-btn')?.addEventListener('click', () => openTeamForm());
   }
 
   function switchTab(name) {
@@ -714,7 +679,7 @@
     const icons = {
       upload: '📤', delete: '🗑️', add: '➕', update: '✏️',
       status_change: '🔄', edit: '📝', notes_update: '📓',
-      generate_card: '🎫', decrypt_aadhaar: '🔓',
+      generate_card: '🎫', card_link: '🔗', decrypt_aadhaar: '🔓',
       login: '🔑', logout: '🚪', logout_all: '🚪',
       '2fa_enable': '🔐', '2fa_disable': '🔓', '2fa_backup_regen': '🔑',
     };
@@ -762,7 +727,6 @@
     }
 
     membersCache = r.data.submissions || [];
-
     if (statusEl) statusEl.style.display = 'none';
     if (tableEl) tableEl.style.display = 'table';
 
@@ -777,10 +741,7 @@
       tr.innerHTML = `
         <td class="cell-id">#${esc(m.id)}</td>
         <td class="cell-mono">${esc(m.member_id || '—')}</td>
-        <td>
-          <strong>${esc(m.name || '—')}</strong><br>
-          <small>${esc(m.father_name || '')}</small>
-        </td>
+        <td><strong>${esc(m.name || '—')}</strong><br><small>${esc(m.father_name || '')}</small></td>
         <td class="cell-mono">${esc(m.mobile || '—')}</td>
         <td class="cell-mono">${maskAadhaar(m.aadhaar_last4)}</td>
         <td class="cell-photo"></td>
@@ -789,7 +750,8 @@
         <td>
           <div class="row-actions">
             <button class="btn btn-small btn-outline view-btn" type="button">View</button>
-            <button class="btn btn-small btn-danger delete-btn" type="button">Delete</button>
+            <button class="btn btn-small btn-outline card-btn" type="button" title="Card link">🔗</button>
+            <button class="btn btn-small btn-danger delete-btn" type="button">🗑️</button>
           </div>
         </td>
       `;
@@ -797,7 +759,6 @@
       if (m.photo_key) {
         const img = document.createElement('img');
         img.className = 'photo-thumb';
-        img.alt = '';
         img.loading = 'lazy';
         tr.querySelector('.cell-photo').appendChild(img);
         fetchPhoto(img, m.photo_key);
@@ -806,10 +767,66 @@
       }
 
       tr.querySelector('.view-btn').addEventListener('click', e => { e.stopPropagation(); openMember(m); });
+      tr.querySelector('.card-btn').addEventListener('click', e => { e.stopPropagation(); openCardLink(m.id); });
       tr.querySelector('.delete-btn').addEventListener('click', e => { e.stopPropagation(); deleteMember(m.id, m.name); });
       tr.addEventListener('click', () => openMember(m));
 
       tbody.appendChild(tr);
+    });
+  }
+
+  // ============ CARD LINK ============
+  async function openCardLink(memberId) {
+    const r = await api('/member/' + memberId + '/card-link', { method: 'POST' });
+
+    if (!r.ok || !r.data.success) {
+      toast(r.data.error || 'Failed to get card link', 'error');
+      return;
+    }
+
+    const cardUrl = r.data.card_url;
+    const memberIdStr = r.data.member_id;
+    const status = r.data.status;
+
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `
+      <div class="card-link-info">
+        <div class="card-link-row"><small>Member ID</small><strong>${esc(memberIdStr)}</strong></div>
+        <div class="card-link-row"><small>Status</small><span class="status-badge status-${esc(status)}">${esc(status)}</span></div>
+      </div>
+      <div class="card-link-url-box">
+        <label>Private Card Link</label>
+        <div class="copy-field">
+          <input type="text" id="card-link-url" value="${esc(cardUrl)}" readonly>
+          <button type="button" class="copy-btn" id="card-link-copy">📋 Copy</button>
+        </div>
+      </div>
+      <p class="text-muted" style="margin-top:1rem;font-size:0.85rem;line-height:1.6">
+        🔒 This link is unique to the member. Share only with them. It cannot be guessed.
+      </p>
+      <div class="modal-actions">
+        <a href="${esc(cardUrl)}" target="_blank" rel="noopener" class="btn btn-primary btn-small">🔗 Open Card</a>
+        <button type="button" class="btn btn-outline btn-small" id="card-link-wa">📱 WhatsApp</button>
+      </div>
+    `;
+
+    openModal('Card Link', wrap);
+
+    document.getElementById('card-link-copy').addEventListener('click', async function () {
+      try {
+        const input = document.getElementById('card-link-url');
+        input.select();
+        input.setSelectionRange(0, 99999);
+        await navigator.clipboard.writeText(cardUrl);
+        this.textContent = '✅ Copied';
+        toast('Card link copied', 'success');
+        setTimeout(() => { this.textContent = '📋 Copy'; }, 2000);
+      } catch (e) { toast('Copy failed', 'error'); }
+    });
+
+    document.getElementById('card-link-wa')?.addEventListener('click', () => {
+      const msg = encodeURIComponent('Your Karni Sena Varanasi membership card:\n' + cardUrl);
+      window.open('https://wa.me/?text=' + msg, '_blank');
     });
   }
 
@@ -819,7 +836,6 @@
     if (m.photo_key) {
       const img = document.createElement('img');
       img.className = 'detail-photo';
-      img.alt = m.name || '';
       wrap.appendChild(img);
       setTimeout(() => fetchPhoto(img, m.photo_key), 0);
     }
@@ -846,8 +862,12 @@
 
     const actions = el('div', 'modal-actions');
 
+    const cardBtn = el('button', 'btn btn-primary btn-small', '🔗 Card Link');
+    cardBtn.addEventListener('click', () => { closeModal(); openCardLink(m.id); });
+    actions.appendChild(cardBtn);
+
     if (m.status !== 'active') {
-      const b = el('button', 'btn btn-primary btn-small', '✅ Approve');
+      const b = el('button', 'btn btn-outline btn-small', '✅ Approve');
       b.addEventListener('click', () => setStatus(m.id, 'active'));
       actions.appendChild(b);
     }
@@ -856,7 +876,16 @@
       b.addEventListener('click', () => setStatus(m.id, 'rejected'));
       actions.appendChild(b);
     }
-    const db = el('button', 'btn btn-outline btn-small', '🔓 View Aadhaar');
+
+    const editBtn = el('button', 'btn btn-outline btn-small', '✏️ Edit');
+    editBtn.addEventListener('click', () => { closeModal(); openMemberEdit(m); });
+    actions.appendChild(editBtn);
+
+    const notesBtn = el('button', 'btn btn-outline btn-small', '📓 Notes');
+    notesBtn.addEventListener('click', () => { closeModal(); openMemberNotes(m); });
+    actions.appendChild(notesBtn);
+
+    const db = el('button', 'btn btn-outline btn-small', '🔓 Aadhaar');
     db.addEventListener('click', () => decryptAadhaar(m.id));
     actions.appendChild(db);
 
@@ -868,11 +897,82 @@
     openModal('Member Details', wrap);
   }
 
+  // ============ MEMBER EDIT / NOTES ============
+  function openMemberEdit(m) {
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `
+      <div class="form-row">
+        <div class="form-field"><label>Name *</label><input type="text" id="edit-name" value="${esc(m.name || '')}" maxlength="100"></div>
+        <div class="form-field"><label>Father's Name *</label><input type="text" id="edit-father" value="${esc(m.father_name || '')}" maxlength="100"></div>
+      </div>
+      <div class="form-field"><label>Address *</label><textarea id="edit-address" rows="2" maxlength="300">${esc(m.address || '')}</textarea></div>
+      <div class="form-row">
+        <div class="form-field"><label>District *</label><input type="text" id="edit-district" value="${esc(m.district || '')}" maxlength="100"></div>
+        <div class="form-field"><label>State *</label><input type="text" id="edit-state" value="${esc(m.state || '')}" maxlength="100"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-field"><label>Mobile *</label><input type="tel" id="edit-mobile" value="${esc(m.mobile || '')}" maxlength="10"></div>
+        <div class="form-field"><label>Aadhaar (leave blank to keep)</label><input type="tel" id="edit-aadhaar" placeholder="12 digits" maxlength="12"></div>
+      </div>
+      <div class="form-field"><label>Additional Info</label><textarea id="edit-additional" rows="2" maxlength="500">${esc(m.additional || '')}</textarea></div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary btn-small" id="edit-save">💾 Save</button>
+        <button type="button" class="btn btn-outline btn-small" id="edit-cancel">Cancel</button>
+      </div>
+    `;
+    openModal('Edit Member', wrap);
+
+    document.getElementById('edit-cancel').addEventListener('click', () => { closeModal(); openMember(m); });
+    document.getElementById('edit-save').addEventListener('click', async () => {
+      const payload = {
+        name: document.getElementById('edit-name').value.trim(),
+        father_name: document.getElementById('edit-father').value.trim(),
+        address: document.getElementById('edit-address').value.trim(),
+        district: document.getElementById('edit-district').value.trim(),
+        state: document.getElementById('edit-state').value.trim(),
+        mobile: document.getElementById('edit-mobile').value.trim(),
+        additional: document.getElementById('edit-additional').value.trim(),
+      };
+      const aadhaar = document.getElementById('edit-aadhaar').value.trim();
+      if (aadhaar) payload.aadhaar = aadhaar;
+
+      const r = await api('/member/' + m.id + '/edit', { method: 'PATCH', body: JSON.stringify(payload) });
+      if (r.ok && r.data.success) {
+        toast('Member updated', 'success');
+        closeModal(); loadMembers(); loadActivity();
+      } else { toast(r.data.error || 'Update failed', 'error'); }
+    });
+  }
+
+  function openMemberNotes(m) {
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `
+      <div class="form-field">
+        <label>Internal Notes</label>
+        <textarea id="notes-text" rows="6" maxlength="2000">${esc(m.notes || '')}</textarea>
+        <small class="hint">Only visible to admins.</small>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-primary btn-small" id="notes-save">💾 Save</button>
+        <button type="button" class="btn btn-outline btn-small" id="notes-cancel">Cancel</button>
+      </div>
+    `;
+    openModal('Member Notes', wrap);
+
+    document.getElementById('notes-cancel').addEventListener('click', () => { closeModal(); openMember(m); });
+    document.getElementById('notes-save').addEventListener('click', async () => {
+      const notes = document.getElementById('notes-text').value.trim();
+      const r = await api('/member/' + m.id + '/notes', { method: 'PATCH', body: JSON.stringify({ notes }) });
+      if (r.ok && r.data.success) {
+        toast('Notes saved', 'success');
+        closeModal(); loadMembers(); loadActivity();
+      } else { toast(r.data.error || 'Save failed', 'error'); }
+    });
+  }
+
   async function setStatus(id, status) {
     let reason = '';
-    if (status === 'rejected') {
-      reason = prompt('Reason for rejection (optional):') || '';
-    }
+    if (status === 'rejected') reason = prompt('Reason for rejection (optional):') || '';
 
     const r = await api('/member/' + id + '/status', {
       method: 'POST',
@@ -881,13 +981,8 @@
 
     if (r.ok && r.data.success) {
       toast('Status: ' + status, 'success');
-      closeModal();
-      loadMembers();
-      loadStats();
-      loadActivity();
-    } else {
-      toast(r.data.error || 'Failed', 'error');
-    }
+      closeModal(); loadMembers(); loadStats(); loadActivity();
+    } else { toast(r.data.error || 'Failed', 'error'); }
   }
 
   async function decryptAadhaar(id) {
@@ -898,15 +993,12 @@
       danger: false,
     });
     if (!ok) return;
-
     if (!(await ensureElevated())) return;
 
     const r = await api('/member/' + id + '/decrypt-aadhaar', { method: 'POST' });
     if (r.ok && r.data.success) {
       openModal('Full Aadhaar', `<p class="aadhaar-reveal">${esc(r.data.aadhaar)}</p><p class="text-muted">This access has been logged.</p>`);
-    } else {
-      toast(r.data.error || 'Failed', 'error');
-    }
+    } else { toast(r.data.error || 'Failed', 'error'); }
   }
 
   async function deleteMember(id, name) {
@@ -917,19 +1009,13 @@
       danger: true,
     });
     if (!ok) return;
-
     if (!(await ensureElevated())) return;
 
     const r = await api('/delete/' + id, { method: 'DELETE' });
     if (r.ok && r.data.success) {
       toast('Member deleted', 'success');
-      closeModal();
-      loadMembers();
-      loadStats();
-      loadActivity();
-    } else {
-      toast(r.data.error || 'Failed', 'error');
-    }
+      closeModal(); loadMembers(); loadStats(); loadActivity();
+    } else { toast(r.data.error || 'Failed', 'error'); }
   }
 
   async function fetchPhoto(img, key) {
@@ -944,96 +1030,630 @@
     } catch (e) { img.style.background = '#F5E9D0'; }
   }
 
-  // ============ COLLECTIONS (generic) ============
-  async function loadCollection(path, key, containerId, renderer, folder) {
-    const box = document.getElementById(containerId);
-    if (!box) return;
+  // ============ IMAGE UPLOAD ============
+  function pickAndUpload(folder, onSuccess) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/jpeg,image/png,image/webp';
+    input.addEventListener('change', async () => {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) { toast('Image must be under 5 MB', 'error'); return; }
 
-    const r = await api(path);
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('folder', folder);
+
+      toast('Uploading...', 'info', 1500);
+      const r = await api('/upload', { method: 'POST', body: fd });
+      if (r.ok && r.data.success) {
+        toast('Image uploaded', 'success');
+        onSuccess(r.data.key);
+      } else { toast(r.data.error || 'Upload failed', 'error'); }
+    });
+    input.click();
+  }
+
+  function imageUploadField(folder, existingKey, fieldId) {
+    const wrap = document.createElement('div');
+    wrap.className = 'form-field';
+    wrap.innerHTML = `
+      <label>Image</label>
+      <div class="image-upload-zone" id="${fieldId}-zone">
+        <div class="image-upload-preview" id="${fieldId}-preview"></div>
+        <div class="image-upload-hint">
+          <span class="upload-icon">📷</span>
+          <span>Click to upload</span>
+          <small>JPG/PNG/WebP · max 5 MB</small>
+        </div>
+      </div>
+      <input type="hidden" id="${fieldId}" value="${esc(existingKey || '')}">
+      <button type="button" class="btn-text image-remove-btn" id="${fieldId}-remove" style="display:none;color:#B91C1C;">Remove image</button>
+    `;
+
+    setTimeout(() => {
+      const zone = document.getElementById(fieldId + '-zone');
+      const preview = document.getElementById(fieldId + '-preview');
+      const hidden = document.getElementById(fieldId);
+      const removeBtn = document.getElementById(fieldId + '-remove');
+
+      function showPreview(key) {
+        if (!key) { preview.innerHTML = ''; removeBtn.style.display = 'none'; return; }
+        const img = document.createElement('img');
+        preview.innerHTML = '';
+        preview.appendChild(img);
+        fetchPhoto(img, key);
+        removeBtn.style.display = 'inline-block';
+      }
+
+      showPreview(hidden.value);
+
+      zone.addEventListener('click', e => {
+        if (e.target === removeBtn) return;
+        pickAndUpload(folder, key => { hidden.value = key; showPreview(key); });
+      });
+
+      removeBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        hidden.value = '';
+        showPreview('');
+      });
+    }, 0);
+
+    return wrap;
+  }
+
+  // ============ GENERIC FORM MODAL ============
+  function formModal({ title, fields, onSubmit, submitText }) {
+    const wrap = document.createElement('div');
+    fields.forEach(f => {
+      if (f.type === 'image') {
+        wrap.appendChild(imageUploadField(f.folder, f.value, f.id));
+      } else if (f.type === 'textarea') {
+        const fw = document.createElement('div');
+        fw.className = 'form-field';
+        fw.innerHTML = `
+          <label>${esc(f.label)}${f.required ? ' *' : ''}</label>
+          <textarea id="${f.id}" rows="${f.rows || 3}" maxlength="${f.max || 5000}" placeholder="${esc(f.placeholder || '')}">${esc(f.value || '')}</textarea>
+        `;
+        wrap.appendChild(fw);
+      } else if (f.type === 'checkbox') {
+        const fw = document.createElement('div');
+        fw.className = 'form-field form-field-check';
+        fw.innerHTML = `
+          <label class="checkbox-label">
+            <input type="checkbox" id="${f.id}" ${f.value ? 'checked' : ''}>
+            <span>${esc(f.label)}</span>
+          </label>
+        `;
+        wrap.appendChild(fw);
+      } else {
+        const fw = document.createElement('div');
+        fw.className = 'form-field';
+        fw.innerHTML = `
+          <label>${esc(f.label)}${f.required ? ' *' : ''}</label>
+          <input type="${f.type || 'text'}" id="${f.id}" value="${esc(f.value || '')}"
+                 maxlength="${f.max || 200}" placeholder="${esc(f.placeholder || '')}">
+        `;
+        wrap.appendChild(fw);
+      }
+    });
+
+    const actions = document.createElement('div');
+    actions.className = 'modal-actions';
+    actions.innerHTML = `
+      <button type="button" class="btn btn-primary btn-small" id="form-submit">${esc(submitText || '💾 Save')}</button>
+      <button type="button" class="btn btn-outline btn-small" id="form-cancel">Cancel</button>
+    `;
+    wrap.appendChild(actions);
+
+    openModal(title, wrap);
+
+    document.getElementById('form-cancel').addEventListener('click', closeModal);
+
+    document.getElementById('form-submit').addEventListener('click', async () => {
+      const data = {};
+      let valid = true;
+
+      fields.forEach(f => {
+        const el = document.getElementById(f.id);
+        if (!el) return;
+        if (f.type === 'checkbox') {
+          data[f.name || f.id] = el.checked ? 1 : 0;
+        } else {
+          const v = el.value.trim();
+          if (f.required && !v) { valid = false; el.style.borderColor = '#EF4444'; return; }
+          el.style.borderColor = '';
+          data[f.name || f.id] = v;
+        }
+      });
+
+      if (!valid) { toast('Please fill required fields', 'error'); return; }
+
+      const btn = document.getElementById('form-submit');
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+      await onSubmit(data, btn);
+    });
+  }
+
+  // ============ CMS: SLIDER ============
+  async function loadSlider() {
+    const box = document.getElementById('slider-grid');
+    if (!box) return;
+    const r = await api('/slider');
     if (!r.ok || !r.data.success) {
       box.innerHTML = '<div class="collection-empty"><p>Failed to load.</p></div>';
       return;
     }
-
-    const items = r.data[key] || [];
-    if (items.length === 0) {
-      box.innerHTML = `<div class="collection-empty"><div class="collection-empty-icon">📭</div><p>Nothing here yet.</p></div>`;
+    const items = r.data.slides || [];
+    if (!items.length) {
+      box.innerHTML = '<div class="collection-empty"><div class="collection-empty-icon">🖼️</div><p>No slides yet.</p></div>';
       return;
     }
-
     box.innerHTML = '';
-    items.forEach(it => box.appendChild(renderer(it, folder)));
+    items.forEach(s => box.appendChild(sliderCard(s)));
   }
 
-  function renderGalleryCard(p) {
+  function sliderCard(s) {
     const card = el('div', 'collection-card');
     const wrap = el('div', 'collection-image');
-    const img = document.createElement('img');
-    img.alt = p.caption || '';
-    img.loading = 'lazy';
-    wrap.appendChild(img);
-    card.appendChild(wrap);
-    if (p.caption) card.appendChild(el('p', 'collection-caption', p.caption));
-
-    const del = el('button', 'btn btn-danger btn-small', '🗑️ Delete');
-    del.addEventListener('click', () => deleteEntity('gallery', p.id));
-    card.appendChild(del);
-
-    setTimeout(() => fetchPhoto(img, p.photo_key), 0);
-    return card;
-  }
-
-  function renderSliderCard(s) {
-    const card = el('div', 'collection-card');
-    const wrap = el('div', 'collection-image');
-    const img = document.createElement('img');
-    img.alt = s.title || '';
-    wrap.appendChild(img);
+    if (s.photo_key) {
+      const img = document.createElement('img');
+      img.alt = s.title || '';
+      wrap.appendChild(img);
+      setTimeout(() => fetchPhoto(img, s.photo_key), 0);
+    } else {
+      wrap.innerHTML = '<div class="photo-placeholder">🖼️</div>';
+    }
     card.appendChild(wrap);
 
     const info = el('div', 'collection-info');
     if (s.title) info.appendChild(el('strong', '', s.title));
     if (s.subtitle) info.appendChild(el('p', 'collection-caption', s.subtitle));
+    if (s.description) info.appendChild(el('p', 'collection-desc', s.description.slice(0, 120)));
     card.appendChild(info);
 
+    const actions = el('div', 'collection-actions');
+    const edit = el('button', 'btn btn-outline btn-small', '✏️ Edit');
+    edit.addEventListener('click', () => openSliderForm(s));
     const del = el('button', 'btn btn-danger btn-small', '🗑️ Delete');
-    del.addEventListener('click', () => deleteEntity('slider', s.id));
-    card.appendChild(del);
+    del.addEventListener('click', () => deleteEntity('slider', s.id, loadSlider));
+    actions.appendChild(edit);
+    actions.appendChild(del);
+    card.appendChild(actions);
 
-    setTimeout(() => fetchPhoto(img, s.photo_key), 0);
     return card;
   }
 
-  function renderRow(items) {
-    return function (it) {
-      const row = el('div', 'collection-row');
-      const info = el('div', 'collection-row-info');
+  function openSliderForm(slide) {
+    const isEdit = !!slide;
+    formModal({
+      title: isEdit ? 'Edit Slide' : 'Add Slide',
+      submitText: isEdit ? '💾 Update' : '➕ Add Slide',
+      fields: [
+        { id: 'sf-photo', type: 'image', folder: 'slider', value: slide?.photo_key || '' },
+        { id: 'sf-title', label: 'Title', value: slide?.title || '', max: 200 },
+        { id: 'sf-subtitle', label: 'Subtitle', value: slide?.subtitle || '', max: 300 },
+        { id: 'sf-desc', type: 'textarea', label: 'Description', value: slide?.description || '', max: 1000, rows: 3 },
+        { id: 'sf-order', label: 'Display Order', type: 'number', value: slide?.display_order ?? 999 },
+        { id: 'sf-active', type: 'checkbox', label: 'Active (visible on site)', value: slide?.is_active ?? 1 },
+      ],
+      onSubmit: async (data, btn) => {
+        const payload = {
+          title: data['sf-title'],
+          subtitle: data['sf-subtitle'],
+          description: data['sf-desc'],
+          display_order: parseInt(data['sf-order']) || 999,
+          is_active: data['sf-active'],
+        };
+        if (data['sf-photo']) payload.photo_key = data['sf-photo'];
 
-      const first = items.titleKey ? it[items.titleKey] : 'Untitled';
-      info.appendChild(el('strong', '', first));
+        let r;
+        if (isEdit) {
+          r = await api('/slider/' + slide.id + '/update', { method: 'PATCH', body: JSON.stringify(payload) });
+        } else {
+          r = await api('/slider/add', { method: 'POST', body: JSON.stringify(payload) });
+        }
 
-      const meta = [];
-      if (items.dateKey && it[items.dateKey]) meta.push(fmtShort(it[items.dateKey]));
-      if (items.venueKey && it[items.venueKey]) meta.push(it[items.venueKey]);
-      if (items.positionKey && it[items.positionKey]) meta.push('Position: ' + it[items.positionKey]);
-      if (meta.length) info.appendChild(el('div', 'collection-meta', meta.join(' · ')));
-
-      const textKey = items.textKey || 'description';
-      if (it[textKey]) info.appendChild(el('p', 'collection-desc', String(it[textKey]).slice(0, 200)));
-
-      row.appendChild(info);
-
-      const actions = el('div', 'collection-row-actions');
-      const del = el('button', 'btn btn-danger btn-small', '🗑️');
-      del.addEventListener('click', () => deleteEntity(items.entity, it.id));
-      actions.appendChild(del);
-      row.appendChild(actions);
-
-      return row;
-    };
+        if (r.ok && r.data.success) {
+          toast(isEdit ? 'Slide updated' : 'Slide added', 'success');
+          closeModal(); loadSlider(); loadActivity();
+        } else {
+          toast(r.data.error || 'Failed', 'error');
+          btn.disabled = false;
+          btn.textContent = isEdit ? '💾 Update' : '➕ Add Slide';
+        }
+      },
+    });
   }
 
-  async function deleteEntity(type, id) {
+  // ============ CMS: GALLERY ============
+  async function loadGallery() {
+    const box = document.getElementById('gallery-grid');
+    if (!box) return;
+    const r = await api('/gallery');
+    if (!r.ok || !r.data.success) {
+      box.innerHTML = '<div class="collection-empty"><p>Failed to load.</p></div>';
+      return;
+    }
+    const items = r.data.photos || [];
+    if (!items.length) {
+      box.innerHTML = '<div class="collection-empty"><div class="collection-empty-icon">📷</div><p>No photos yet.</p></div>';
+      return;
+    }
+    box.innerHTML = '';
+    items.forEach(p => box.appendChild(galleryCard(p)));
+  }
+
+  function galleryCard(p) {
+    const card = el('div', 'collection-card');
+    const wrap = el('div', 'collection-image');
+    if (p.photo_key) {
+      const img = document.createElement('img');
+      img.alt = p.caption || '';
+      wrap.appendChild(img);
+      setTimeout(() => fetchPhoto(img, p.photo_key), 0);
+    }
+    card.appendChild(wrap);
+
+    if (p.caption) {
+      const info = el('div', 'collection-info');
+      info.appendChild(el('p', 'collection-caption', p.caption));
+      card.appendChild(info);
+    }
+
+    const actions = el('div', 'collection-actions');
+    const edit = el('button', 'btn btn-outline btn-small', '✏️ Edit');
+    edit.addEventListener('click', () => openGalleryForm(p));
+    const del = el('button', 'btn btn-danger btn-small', '🗑️');
+    del.addEventListener('click', () => deleteEntity('gallery', p.id, loadGallery));
+    actions.appendChild(edit);
+    actions.appendChild(del);
+    card.appendChild(actions);
+
+    return card;
+  }
+
+  function openGalleryForm(photo) {
+    const isEdit = !!photo;
+    formModal({
+      title: isEdit ? 'Edit Photo' : 'Add Photo',
+      submitText: isEdit ? '💾 Update' : '➕ Add Photo',
+      fields: [
+        { id: 'gf-photo', type: 'image', folder: 'gallery', value: photo?.photo_key || '' },
+        { id: 'gf-caption', label: 'Caption', value: photo?.caption || '', max: 300 },
+        { id: 'gf-order', label: 'Display Order', type: 'number', value: photo?.display_order ?? 999 },
+        { id: 'gf-active', type: 'checkbox', label: 'Active', value: photo?.is_active ?? 1 },
+      ],
+      onSubmit: async (data, btn) => {
+        const payload = {
+          caption: data['gf-caption'],
+          display_order: parseInt(data['gf-order']) || 999,
+          is_active: data['gf-active'],
+        };
+        if (data['gf-photo']) payload.photo_key = data['gf-photo'];
+
+        let r;
+        if (isEdit) {
+          r = await api('/gallery/' + photo.id + '/update', { method: 'PATCH', body: JSON.stringify(payload) });
+        } else {
+          if (!payload.photo_key) { toast('Please upload a photo', 'error'); btn.disabled = false; btn.textContent = '➕ Add Photo'; return; }
+          r = await api('/gallery/add', { method: 'POST', body: JSON.stringify(payload) });
+        }
+
+        if (r.ok && r.data.success) {
+          toast(isEdit ? 'Photo updated' : 'Photo added', 'success');
+          closeModal(); loadGallery(); loadActivity();
+        } else {
+          toast(r.data.error || 'Failed', 'error');
+          btn.disabled = false;
+          btn.textContent = isEdit ? '💾 Update' : '➕ Add Photo';
+        }
+      },
+    });
+  }
+
+  // ============ CMS: EVENTS ============
+  async function loadEvents() {
+    const box = document.getElementById('events-list');
+    if (!box) return;
+    const r = await api('/events');
+    if (!r.ok || !r.data.success) { box.innerHTML = '<div class="collection-empty"><p>Failed to load.</p></div>'; return; }
+    const items = r.data.events || [];
+    if (!items.length) { box.innerHTML = '<div class="collection-empty"><div class="collection-empty-icon">📅</div><p>No events yet.</p></div>'; return; }
+    box.innerHTML = '';
+    items.forEach(e => box.appendChild(eventRow(e)));
+  }
+
+  function eventRow(e) {
+    const row = el('div', 'collection-row');
+    const info = el('div', 'collection-row-info');
+    info.appendChild(el('strong', '', e.title || 'Untitled'));
+    const meta = [];
+    if (e.event_date) meta.push(fmtShort(e.event_date));
+    if (e.venue) meta.push(e.venue);
+    if (meta.length) info.appendChild(el('div', 'collection-meta', meta.join(' · ')));
+    if (e.description) info.appendChild(el('p', 'collection-desc', e.description.slice(0, 200)));
+    row.appendChild(info);
+
+    const actions = el('div', 'collection-row-actions');
+    const edit = el('button', 'btn btn-outline btn-small', '✏️');
+    edit.addEventListener('click', () => openEventForm(e));
+    const del = el('button', 'btn btn-danger btn-small', '🗑️');
+    del.addEventListener('click', () => deleteEntity('events', e.id, loadEvents));
+    actions.appendChild(edit);
+    actions.appendChild(del);
+    row.appendChild(actions);
+    return row;
+  }
+
+  function openEventForm(event) {
+    const isEdit = !!event;
+    formModal({
+      title: isEdit ? 'Edit Event' : 'Add Event',
+      submitText: isEdit ? '💾 Update' : '➕ Add Event',
+      fields: [
+        { id: 'ef-title', label: 'Title', value: event?.title || '', required: true, max: 200 },
+        { id: 'ef-date', label: 'Event Date', type: 'date', value: event?.event_date || todayISO() },
+        { id: 'ef-venue', label: 'Venue', value: event?.venue || '', max: 200 },
+        { id: 'ef-desc', type: 'textarea', label: 'Description', value: event?.description || '', max: 5000, rows: 4 },
+        { id: 'ef-photo', type: 'image', folder: 'events', value: event?.photo_key || '' },
+        { id: 'ef-active', type: 'checkbox', label: 'Active', value: event?.is_active ?? 1 },
+      ],
+      onSubmit: async (data, btn) => {
+        const payload = {
+          title: data['ef-title'],
+          event_date: data['ef-date'],
+          venue: data['ef-venue'],
+          description: data['ef-desc'],
+          is_active: data['ef-active'],
+        };
+        if (data['ef-photo']) payload.photo_key = data['ef-photo'];
+
+        let r;
+        if (isEdit) {
+          r = await api('/events/' + event.id + '/update', { method: 'PATCH', body: JSON.stringify(payload) });
+        } else {
+          r = await api('/events/add', { method: 'POST', body: JSON.stringify(payload) });
+        }
+
+        if (r.ok && r.data.success) {
+          toast(isEdit ? 'Event updated' : 'Event added', 'success');
+          closeModal(); loadEvents(); loadActivity();
+        } else { toast(r.data.error || 'Failed', 'error'); btn.disabled = false; btn.textContent = isEdit ? '💾 Update' : '➕ Add Event'; }
+      },
+    });
+  }
+
+  // ============ CMS: NEWS ============
+  async function loadNews() {
+    const box = document.getElementById('news-list');
+    if (!box) return;
+    const r = await api('/news');
+    if (!r.ok || !r.data.success) { box.innerHTML = '<div class="collection-empty"><p>Failed to load.</p></div>'; return; }
+    const items = r.data.news || [];
+    if (!items.length) { box.innerHTML = '<div class="collection-empty"><div class="collection-empty-icon">📰</div><p>No news yet.</p></div>'; return; }
+    box.innerHTML = '';
+    items.forEach(n => box.appendChild(newsRow(n)));
+  }
+
+  function newsRow(n) {
+    const row = el('div', 'collection-row');
+    const info = el('div', 'collection-row-info');
+    info.appendChild(el('strong', '', n.headline || 'Untitled'));
+    if (n.news_date) info.appendChild(el('div', 'collection-meta', fmtShort(n.news_date)));
+    if (n.content) info.appendChild(el('p', 'collection-desc', n.content.slice(0, 200)));
+    row.appendChild(info);
+
+    const actions = el('div', 'collection-row-actions');
+    const edit = el('button', 'btn btn-outline btn-small', '✏️');
+    edit.addEventListener('click', () => openNewsForm(n));
+    const del = el('button', 'btn btn-danger btn-small', '🗑️');
+    del.addEventListener('click', () => deleteEntity('news', n.id, loadNews));
+    actions.appendChild(edit);
+    actions.appendChild(del);
+    row.appendChild(actions);
+    return row;
+  }
+
+  function openNewsForm(news) {
+    const isEdit = !!news;
+    formModal({
+      title: isEdit ? 'Edit News' : 'Add News',
+      submitText: isEdit ? '💾 Update' : '➕ Add News',
+      fields: [
+        { id: 'nf-headline', label: 'Headline', value: news?.headline || '', required: true, max: 300 },
+        { id: 'nf-date', label: 'Date', type: 'date', value: news?.news_date || todayISO() },
+        { id: 'nf-content', type: 'textarea', label: 'Content', value: news?.content || '', max: 20000, rows: 6 },
+        { id: 'nf-photo', type: 'image', folder: 'news', value: news?.photo_key || '' },
+        { id: 'nf-active', type: 'checkbox', label: 'Active', value: news?.is_active ?? 1 },
+      ],
+      onSubmit: async (data, btn) => {
+        const payload = {
+          headline: data['nf-headline'],
+          news_date: data['nf-date'],
+          content: data['nf-content'],
+          is_active: data['nf-active'],
+        };
+        if (data['nf-photo']) payload.photo_key = data['nf-photo'];
+
+        let r;
+        if (isEdit) {
+          r = await api('/news/' + news.id + '/update', { method: 'PATCH', body: JSON.stringify(payload) });
+        } else {
+          r = await api('/news/add', { method: 'POST', body: JSON.stringify(payload) });
+        }
+
+        if (r.ok && r.data.success) {
+          toast(isEdit ? 'News updated' : 'News added', 'success');
+          closeModal(); loadNews(); loadActivity();
+        } else { toast(r.data.error || 'Failed', 'error'); btn.disabled = false; btn.textContent = isEdit ? '💾 Update' : '➕ Add News'; }
+      },
+    });
+  }
+
+  // ============ CMS: ADS ============
+  async function loadAds() {
+    const box = document.getElementById('ads-list');
+    if (!box) return;
+    const r = await api('/ads');
+    if (!r.ok || !r.data.success) { box.innerHTML = '<div class="collection-empty"><p>Failed to load.</p></div>'; return; }
+    const items = r.data.ads || [];
+    if (!items.length) { box.innerHTML = '<div class="collection-empty"><div class="collection-empty-icon">📢</div><p>No ads yet.</p></div>'; return; }
+    box.innerHTML = '';
+    items.forEach(a => box.appendChild(adRow(a)));
+  }
+
+  function adRow(a) {
+    const row = el('div', 'collection-row');
+    const info = el('div', 'collection-row-info');
+    info.appendChild(el('strong', '', a.title || 'Untitled'));
+    const meta = [];
+    if (a.position) meta.push('Position: ' + a.position);
+    if (a.link_url) meta.push(a.link_url);
+    if (meta.length) info.appendChild(el('div', 'collection-meta', meta.join(' · ')));
+    if (a.content) info.appendChild(el('p', 'collection-desc', a.content.slice(0, 200)));
+    row.appendChild(info);
+
+    const actions = el('div', 'collection-row-actions');
+    const edit = el('button', 'btn btn-outline btn-small', '✏️');
+    edit.addEventListener('click', () => openAdsForm(a));
+    const del = el('button', 'btn btn-danger btn-small', '🗑️');
+    del.addEventListener('click', () => deleteEntity('ads', a.id, loadAds));
+    actions.appendChild(edit);
+    actions.appendChild(del);
+    row.appendChild(actions);
+    return row;
+  }
+
+  function openAdsForm(ad) {
+    const isEdit = !!ad;
+    formModal({
+      title: isEdit ? 'Edit Ad' : 'Add Ad',
+      submitText: isEdit ? '💾 Update' : '➕ Add Ad',
+      fields: [
+        { id: 'af-title', label: 'Title', value: ad?.title || '', max: 200 },
+        { id: 'af-content', type: 'textarea', label: 'Content', value: ad?.content || '', max: 2000, rows: 3 },
+        { id: 'af-image', type: 'image', folder: 'ads', value: ad?.image_key || '' },
+        { id: 'af-link', label: 'Link URL (https://...)', value: ad?.link_url || '', max: 500 },
+        { id: 'af-position', label: 'Position', value: ad?.position || 'top', max: 30, placeholder: 'top / bottom / sidebar' },
+        { id: 'af-start', label: 'Start Date', type: 'date', value: ad?.start_date || '' },
+        { id: 'af-end', label: 'End Date', type: 'date', value: ad?.end_date || '' },
+        { id: 'af-active', type: 'checkbox', label: 'Active', value: ad?.is_active ?? 1 },
+      ],
+      onSubmit: async (data, btn) => {
+        const payload = {
+          title: data['af-title'],
+          content: data['af-content'],
+          link_url: data['af-link'],
+          position: data['af-position'] || 'top',
+          start_date: data['af-start'],
+          end_date: data['af-end'],
+          is_active: data['af-active'],
+        };
+        if (data['af-image']) payload.image_key = data['af-image'];
+
+        let r;
+        if (isEdit) {
+          r = await api('/ads/' + ad.id + '/update', { method: 'PATCH', body: JSON.stringify(payload) });
+        } else {
+          r = await api('/ads/add', { method: 'POST', body: JSON.stringify(payload) });
+        }
+
+        if (r.ok && r.data.success) {
+          toast(isEdit ? 'Ad updated' : 'Ad added', 'success');
+          closeModal(); loadAds(); loadActivity();
+        } else { toast(r.data.error || 'Failed', 'error'); btn.disabled = false; btn.textContent = isEdit ? '💾 Update' : '➕ Add Ad'; }
+      },
+    });
+  }
+
+  // ============ CMS: TEAM ============
+  async function loadTeam() {
+    const box = document.getElementById('team-grid');
+    if (!box) return;
+    const r = await api('/team');
+    if (!r.ok || !r.data.success) { box.innerHTML = '<div class="collection-empty"><p>Failed.</p></div>'; return; }
+    const items = r.data.members || [];
+    if (!items.length) { box.innerHTML = '<div class="collection-empty"><div class="collection-empty-icon">👑</div><p>No team members.</p></div>'; return; }
+    box.innerHTML = '';
+    items.forEach(t => box.appendChild(teamCard(t)));
+  }
+
+  function teamCard(t) {
+    const card = el('div', 'collection-card team-card-admin');
+    const wrap = el('div', 'collection-image');
+    if (t.photo_key) {
+      const img = document.createElement('img');
+      img.alt = t.name || '';
+      wrap.appendChild(img);
+      setTimeout(() => fetchPhoto(img, t.photo_key), 0);
+    } else {
+      wrap.innerHTML = '<div class="photo-placeholder">👤</div>';
+    }
+    card.appendChild(wrap);
+
+    const info = el('div', 'collection-info');
+    info.appendChild(el('strong', '', t.name || 'Unnamed'));
+    if (t.role) info.appendChild(el('p', 'collection-caption', t.role));
+    if (t.bio) info.appendChild(el('p', 'collection-desc', t.bio.slice(0, 100)));
+    card.appendChild(info);
+
+    const actions = el('div', 'collection-actions');
+    const edit = el('button', 'btn btn-outline btn-small', '✏️ Edit');
+    edit.addEventListener('click', () => openTeamForm(t));
+    const del = el('button', 'btn btn-danger btn-small', '🗑️');
+    del.addEventListener('click', () => deleteEntity('team', t.id, loadTeam));
+    actions.appendChild(edit);
+    actions.appendChild(del);
+    card.appendChild(actions);
+
+    return card;
+  }
+
+  function openTeamForm(member) {
+    const isEdit = !!member;
+    formModal({
+      title: isEdit ? 'Edit Team Member' : 'Add Team Member',
+      submitText: isEdit ? '💾 Update' : '➕ Add Member',
+      fields: [
+        { id: 'tf-name', label: 'Full Name', value: member?.name || '', required: true, max: 100 },
+        { id: 'tf-role', label: 'Role / Position', value: member?.role || '', max: 100 },
+        { id: 'tf-photo', type: 'image', folder: 'team', value: member?.photo_key || '' },
+        { id: 'tf-bio', type: 'textarea', label: 'Short Bio', value: member?.bio || '', max: 1000, rows: 3 },
+        { id: 'tf-phone', label: 'Phone (optional)', value: member?.phone || '', max: 20, placeholder: '9876543210' },
+        { id: 'tf-order', label: 'Display Order', type: 'number', value: member?.display_order ?? 999 },
+        { id: 'tf-active', type: 'checkbox', label: 'Active', value: member?.is_active ?? 1 },
+      ],
+      onSubmit: async (data, btn) => {
+        const payload = {
+          name: data['tf-name'],
+          role: data['tf-role'],
+          bio: data['tf-bio'],
+          phone: data['tf-phone'],
+          display_order: parseInt(data['tf-order']) || 999,
+          is_active: data['tf-active'],
+        };
+        if (data['tf-photo']) payload.photo_key = data['tf-photo'];
+
+        let r;
+        if (isEdit) {
+          r = await api('/team/' + member.id + '/update', { method: 'PATCH', body: JSON.stringify(payload) });
+        } else {
+          r = await api('/team/add', { method: 'POST', body: JSON.stringify(payload) });
+        }
+
+        if (r.ok && r.data.success) {
+          toast(isEdit ? 'Member updated' : 'Member added', 'success');
+          closeModal(); loadTeam(); loadActivity();
+        } else { toast(r.data.error || 'Failed', 'error'); btn.disabled = false; btn.textContent = isEdit ? '💾 Update' : '➕ Add Member'; }
+      },
+    });
+  }
+
+  // ============ DELETE ENTITY ============
+  async function deleteEntity(type, id, reloadFn) {
     const ok = await confirmDialog({
       title: 'Delete item?',
       message: 'This cannot be undone.',
@@ -1045,68 +1665,9 @@
     const r = await api('/' + type + '/' + id + '/delete', { method: 'DELETE' });
     if (r.ok && r.data.success) {
       toast('Deleted', 'success');
-      if (type === 'gallery') loadGallery();
-      if (type === 'slider') loadSlider();
-      if (type === 'events') loadEvents();
-      if (type === 'news') loadNews();
-      if (type === 'ads') loadAds();
-      if (type === 'team') loadTeam();
+      if (reloadFn) reloadFn();
       loadActivity();
-    } else {
-      toast(r.data.error || 'Delete failed', 'error');
-    }
-  }
-
-  function loadGallery() { loadCollection('/gallery', 'photos', 'gallery-grid', renderGalleryCard); }
-  function loadSlider()  { loadCollection('/slider', 'slides', 'slider-grid', renderSliderCard); }
-  function loadEvents()  {
-    const renderer = renderRow({ titleKey: 'title', dateKey: 'event_date', venueKey: 'venue', textKey: 'description', entity: 'events' });
-    loadCollection('/events', 'events', 'events-list', renderer);
-  }
-  function loadNews() {
-    const renderer = renderRow({ titleKey: 'headline', dateKey: 'news_date', textKey: 'content', entity: 'news' });
-    loadCollection('/news', 'news', 'news-list', renderer);
-  }
-  function loadAds() {
-    const renderer = renderRow({ titleKey: 'title', positionKey: 'position', textKey: 'content', entity: 'ads' });
-    loadCollection('/ads', 'ads', 'ads-list', renderer);
-  }
-  function loadTeam() {
-    const box = document.getElementById('team-grid');
-    if (!box) return;
-    api('/team').then(r => {
-      if (!r.ok || !r.data.success) { box.innerHTML = '<div class="collection-empty"><p>Failed.</p></div>'; return; }
-      const members = r.data.members || [];
-      if (!members.length) {
-        box.innerHTML = '<div class="collection-empty"><div class="collection-empty-icon">👑</div><p>No team members.</p></div>';
-        return;
-      }
-      box.innerHTML = '';
-      members.forEach(t => {
-        const card = el('div', 'collection-card team-card-admin');
-        const iw = el('div', 'collection-image');
-        if (t.photo_key) {
-          const img = document.createElement('img');
-          img.alt = t.name || '';
-          iw.appendChild(img);
-          setTimeout(() => fetchPhoto(img, t.photo_key), 0);
-        } else {
-          iw.innerHTML = '<div class="photo-placeholder">👤</div>';
-        }
-        card.appendChild(iw);
-
-        const info = el('div', 'collection-info');
-        info.appendChild(el('strong', '', t.name || 'Unnamed'));
-        if (t.role) info.appendChild(el('p', 'collection-caption', t.role));
-        if (t.bio) info.appendChild(el('p', 'collection-desc', t.bio));
-        card.appendChild(info);
-
-        const del = el('button', 'btn btn-danger btn-small', '🗑️');
-        del.addEventListener('click', () => deleteEntity('team', t.id));
-        card.appendChild(del);
-        box.appendChild(card);
-      });
-    });
+    } else { toast(r.data.error || 'Delete failed', 'error'); }
   }
 
   // ============ CONTENT ============
@@ -1121,55 +1682,65 @@
     }
 
     const c = r.data.content || {};
+    const org = c.org || {};
+    const about = c.about || {};
+    const contact = c.contact || {};
+
     editor.innerHTML = `
-      <div class="content-field">
-        <label>Organization Name</label>
-        <input type="text" id="c-org-name" value="${esc(c.org && c.org.name || '')}">
+      <div class="content-section">
+        <h3 class="content-section-title">Organization</h3>
+        <div class="content-field"><label>Organization Name</label><input type="text" id="c-org-name" value="${esc(org.name || '')}"></div>
+        <div class="content-field"><label>Top Bar Text</label><input type="text" id="c-org-topbar" value="${esc(org.topbar || '')}"></div>
+        <div class="content-field"><label>Subtitle</label><input type="text" id="c-org-subtitle" value="${esc(org.subtitle || '')}"></div>
       </div>
-      <div class="content-field">
-        <label>Top Bar Text</label>
-        <input type="text" id="c-org-topbar" value="${esc(c.org && c.org.topbar || '')}">
+      <div class="content-section">
+        <h3 class="content-section-title">About Section</h3>
+        <div class="content-field"><label>About Title</label><input type="text" id="c-about-title" value="${esc(about.title || '')}"></div>
+        <div class="content-field"><label>About Description</label><textarea id="c-about-desc" rows="4">${esc(about.description || '')}</textarea></div>
       </div>
-      <div class="content-field">
-        <label>About Description</label>
-        <textarea id="c-about-desc" rows="4">${esc(c.about && c.about.description || '')}</textarea>
+      <div class="content-section">
+        <h3 class="content-section-title">Contact</h3>
+        <div class="content-field"><label>Contact Title</label><input type="text" id="c-contact-title" value="${esc(contact.title || '')}"></div>
+        <div class="content-field"><label>Address</label><input type="text" id="c-contact-address" value="${esc(contact.address || '')}"></div>
+        <div class="content-field"><label>Email</label><input type="email" id="c-contact-email" value="${esc(contact.email || '')}"></div>
       </div>
       <div class="content-actions">
-        <button class="btn btn-primary" id="content-save-btn" type="button">💾 Save Changes</button>
+        <button class="btn btn-primary" id="content-save-btn" type="button">💾 Save All Changes</button>
       </div>
     `;
 
-    document.getElementById('content-save-btn').addEventListener('click', saveContent);
-  }
+    document.getElementById('content-save-btn').addEventListener('click', async () => {
+      const r0 = await api('/content');
+      if (!r0.ok || !r0.data.success) { toast('Cannot save', 'error'); return; }
+      const c2 = JSON.parse(JSON.stringify(r0.data.content || {}));
+      c2.org = c2.org || {};
+      c2.about = c2.about || {};
+      c2.contact = c2.contact || {};
 
-  async function saveContent() {
-    const r0 = await api('/content');
-    if (!r0.ok || !r0.data.success) { toast('Cannot save', 'error'); return; }
+      c2.org.name = document.getElementById('c-org-name').value.trim();
+      c2.org.topbar = document.getElementById('c-org-topbar').value.trim();
+      c2.org.subtitle = document.getElementById('c-org-subtitle').value.trim();
+      c2.about.title = document.getElementById('c-about-title').value.trim();
+      c2.about.description = document.getElementById('c-about-desc').value.trim();
+      c2.contact.title = document.getElementById('c-contact-title').value.trim();
+      c2.contact.address = document.getElementById('c-contact-address').value.trim();
+      c2.contact.email = document.getElementById('c-contact-email').value.trim();
 
-    const c = JSON.parse(JSON.stringify(r0.data.content || {}));
-    c.org = c.org || {};
-    c.about = c.about || {};
-
-    c.org.name = document.getElementById('c-org-name').value.trim();
-    c.org.topbar = document.getElementById('c-org-topbar').value.trim();
-    c.about.description = document.getElementById('c-about-desc').value.trim();
-
-    const r = await api('/content/update', { method: 'POST', body: JSON.stringify({ content: c }) });
-    if (r.ok && r.data.success) {
-      toast('Content saved', 'success');
-      loadActivity();
-    } else {
-      toast(r.data.error || 'Save failed', 'error');
-    }
+      const r = await api('/content/update', { method: 'POST', body: JSON.stringify({ content: c2 }) });
+      if (r.ok && r.data.success) {
+        toast('Content saved', 'success');
+        loadActivity();
+      } else { toast(r.data.error || 'Save failed', 'error'); }
+    });
   }
 
   // ============ 2FA STATUS ============
   async function check2FA() {
-    const el = document.getElementById('2fa-status-text');
-    if (!el) return;
+    const elm = document.getElementById('2fa-status-text');
+    if (!elm) return;
     const r = await api('/2fa/status');
     if (r.ok && r.data.success) {
-      el.textContent = r.data.enabled ? '2FA is enabled ✅' : '2FA is disabled ⚠️';
+      elm.textContent = r.data.enabled ? '2FA is enabled ✅' : '2FA is disabled ⚠️';
     }
   }
 
@@ -1183,11 +1754,11 @@
       m.district || '', m.state || '', m.mobile || '', m.aadhaar_last4 || '',
       m.status || '', m.submitted_at || '',
     ]);
-    const esc = v => {
+    const escF = v => {
       const s = String(v == null ? '' : v);
       return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
     };
-    const csv = '\uFEFF' + [headers, ...rows].map(r => r.map(esc).join(',')).join('\r\n');
+    const csv = '\uFEFF' + [headers, ...rows].map(r => r.map(escF).join(',')).join('\r\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1206,7 +1777,6 @@
     initLogin();
 
     if (auth && auth.token && auth.scope === 'full') {
-      // Verify session still valid
       const r = await api('/session');
       if (r.ok && r.data.success && r.data.scope === 'full') {
         auth.user = r.data.user;
@@ -1218,7 +1788,6 @@
       }
       clearAuth();
     } else if (auth && auth.scope === 'setup') {
-      // Resume setup
       await startSetupWizard();
       return;
     }
